@@ -161,20 +161,7 @@ UI.Ripple(Object, X, Y)
 - `Object`: The GUI object to animate.
 - `X`, `Y`: The position of the ripple relative to the object.
 
-### Tweening
-Tween GUI properties:
-```lua
-Assist.Tween(Object, {Property = Value}, Duration, Yield, Preference)
-```
 
-- `Object`: The GUI object to tween.
-- `Property`: The property to change.
-- `Value`: The new value.
-- `Duration`: Tween duration (in seconds).
-- `Yield`: If `true`, waits for the tween to complete.
-- `Preference`: (Optional) Custom easing preference.
-
----
 
 ### Library
 - `CreateLib()`: Initializes the library.
