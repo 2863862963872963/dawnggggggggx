@@ -152,16 +152,6 @@ UI.ToggleKey = Enum.KeyCode.RightAlt
 UI.BottomMenuToggleKey = Enum.KeyCode.RightControl
 ```
 
-### Ripple Effect
-Add a ripple animation to any GUI object:
-```lua
-UI.Ripple(Object, X, Y)
-```
-
-- `Object`: The GUI object to animate.
-- `X`, `Y`: The position of the ripple relative to the object.
-
-
 
 ### Library
 - `CreateLib()`: Initializes the library.
