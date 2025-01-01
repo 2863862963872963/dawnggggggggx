@@ -9,9 +9,7 @@
 
 To include the library in your script, use the following `loadstring` method:
 
-```lua
-local XenonV3 = loadstring(game:HttpGet("YOUR_LIBRARY_URL_HERE"))()
-```
+local XenonV3 = loadstring(game:HttpGet("https://raw.githubusercontent.com/2863862963872963/Libraries/refs/heads/main/Xenonv3/Source.lua"))()
 
 
 ---
