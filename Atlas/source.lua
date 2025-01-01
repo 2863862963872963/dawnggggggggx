@@ -298,25 +298,31 @@ do
         return (((r * 0.299) + (g * 0.587) + (b * 0.114)) > 150) and Color3.new(0,0,0) or Color3.new(1,1,1)
     end
 
-    function utility:InitDragging(frame,button)
-        button = button or frame
+    function utility:InitDragging(frame)
+    local dragging = false
+    local dragStart, startPos
 
-        assert(button and frame,"Need a frame in order to start dragging")
+    frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPos = frame.Position
+        end
+    end)
 
-        -- dragging
-        local _dragging = false
-        local _dragging_offset
+    frame.InputChanged:Connect(function(input)
+        if dragging and input.UserInputType == Enum.UserInputType.Touch then
+            local delta = input.Position - dragStart
+            frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end)
 
-        local inputBegan = button.MouseButton1Down:Connect(function()
-            _dragging = true
-            _dragging_offset = Vector2.new(mouse.X,mouse.Y)-frame.AbsolutePosition
-        end)
-
-        local inputEnded = mouse.Button1Up:Connect(function()
-            _dragging = false
-            _dragging_offset = nil
-        end)
-
+    frame.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.Touch then
+            dragging = false
+        end
+    end)
+        
         local updateEvent
         LPH_JIT_MAX(function()
             updateEvent = Run.RenderStepped:Connect(function()
@@ -2481,6 +2487,7 @@ do
                 hint.Position = UDim2.fromOffset(mouse.X-5,mouse.Y+30)
             end))
         end)()
+
 
         -- searching
         do
