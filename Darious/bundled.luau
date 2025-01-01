@@ -8618,8 +8618,8 @@ return function(property, bindableEvent)
 
 	-- Variables
 
-	local x = value(750)
-	local y = value(500)
+	local x = value(650)
+	local y = value(400)
 	local isCollapsed = value(false)
 	local stage1 = value(false)
 	local stage2 = value(false)
