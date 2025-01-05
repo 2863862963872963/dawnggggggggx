@@ -13,6 +13,7 @@ local Window = MacLib:Window({
 
 Window:SetScale(0.6)
 
+
 local globalSettings = {
 	UIBlurToggle = Window:GlobalSetting({
 		Name = "UI Blur",
