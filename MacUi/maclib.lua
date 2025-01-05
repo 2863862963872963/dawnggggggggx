@@ -5642,17 +5642,13 @@ function MacLib:ToggleButton()
     ImageButton.MouseButton1Down:Connect(
         function()
             local success, err =
-                pcall(
-                function()
-                    ToggleMenu()
-                end
-            )
+                pcall(function()
+                    Base.Visible = not Base.Visible
+                end)
             if not success then
                 warn("Error toggling UI:", err)
             end
-        end
-    )
-
+        end)
     UICorner.Parent = ImageButton
     UICorner.CornerRadius = UDim.new(1, 0)
 end
