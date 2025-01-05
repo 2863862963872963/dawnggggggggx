@@ -11,6 +11,8 @@ local Window = MacLib:Window({
 	AcrylicBlur = true,
 })
 
+Window:SetScale(0.6)
+
 local globalSettings = {
 	UIBlurToggle = Window:GlobalSetting({
 		Name = "UI Blur",
