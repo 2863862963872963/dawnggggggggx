@@ -5643,7 +5643,7 @@ function MacLib:ToggleButton()
         function()
             local success, err =
                 pcall(function()
-                    Base.Visible = not Base.Visible
+                    base.Visible = not base.Visible
                 end)
             if not success then
                 warn("Error toggling UI:", err)
