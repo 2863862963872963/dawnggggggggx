@@ -2459,6 +2459,7 @@ function MacLib:Window(Settings)
 					dropdown.BorderColor3 = Color3.fromRGB(0, 0, 0)
 					dropdown.BorderSizePixel = 0
 					dropdown.Size = UDim2.new(1, 0, 0, 38)
+					dropdown.ZIndex = 2
 					dropdown.Parent = section
 					dropdown.ClipsDescendants = true
 
@@ -2479,6 +2480,7 @@ function MacLib:Window(Settings)
 					interact.BorderColor3 = Color3.fromRGB(0, 0, 0)
 					interact.BorderSizePixel = 0
 					interact.Size = UDim2.new(1, 0, 0, 38)
+					interact.ZIndex = 4
 					interact.Parent = dropdown
 
 					local dropdownName = Instance.new("TextLabel")
@@ -2536,6 +2538,9 @@ function MacLib:Window(Settings)
 					dropdownFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y 
 					dropdownFrame.CanvasSize = UDim2.new(0, 0, 0, 0) 
 					dropdownFrame.ScrollBarThickness = 1
+					dropdownFrame.ZIndex = 3
+					dropdownFrame.ScrollingDirection = Enum.ScrollingDirection.Y
+					dropdownFrame.ScrollBarImageTransparency = 1
 					dropdownFrame.ScrollBarImageColor3 = Color3.fromRGB(150, 150, 150)
 					dropdownFrame.Parent = dropdown
 
