@@ -2535,7 +2535,7 @@ function MacLib:Window(Settings)
 					dropdownFrame.Visible = false
 					dropdownFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y 
 					dropdownFrame.CanvasSize = UDim2.new(0, 0, 0, 0) 
-					dropdownFrame.ScrollBarThickness = 6 
+					dropdownFrame.ScrollBarThickness = 1
 					dropdownFrame.ScrollBarImageColor3 = Color3.fromRGB(150, 150, 150)
 					dropdownFrame.Parent = dropdown
 
