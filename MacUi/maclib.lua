@@ -2447,7 +2447,7 @@ function MacLib:Window(Settings)
 					return KeybindFunctions
 				end
 
-				function SectionFunctions:Dropdown(Settings, Flag)
+			function SectionFunctions:Dropdown(Settings, Flag)
 					local DropdownFunctions = { Settings = Settings, IgnoreConfig = false, Class = "Dropdown" }
 					local Selected = {}
 					local OptionObjs = {}
@@ -2524,16 +2524,21 @@ function MacLib:Window(Settings)
 					dropdownImage.Size = UDim2.fromOffset(14, 14)
 					dropdownImage.Parent = dropdown
 
-					local dropdownFrame = Instance.new("Frame")
+					local dropdownFrame = Instance.new("ScrollingFrame")
 					dropdownFrame.Name = "DropdownFrame"
 					dropdownFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 					dropdownFrame.BackgroundTransparency = 1
 					dropdownFrame.BorderColor3 = Color3.fromRGB(0, 0, 0)
 					dropdownFrame.BorderSizePixel = 0
 					dropdownFrame.ClipsDescendants = true
-					dropdownFrame.Size = UDim2.fromScale(1, 1)
+					dropdownFrame.Size = UDim2.new(1, 0, 1, 0) 
 					dropdownFrame.Visible = false
-					dropdownFrame.AutomaticSize = Enum.AutomaticSize.Y
+					dropdownFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y 
+					dropdownFrame.CanvasSize = UDim2.new(0, 0, 0, 0) 
+					dropdownFrame.ScrollBarThickness = 6 
+					dropdownFrame.ScrollBarImageColor3 = Color3.fromRGB(150, 150, 150)
+					dropdownFrame.Parent = dropdown
+
 
 					local dropdownFrameUIPadding = Instance.new("UIPadding")
 					dropdownFrameUIPadding.Name = "DropdownFrameUIPadding"
