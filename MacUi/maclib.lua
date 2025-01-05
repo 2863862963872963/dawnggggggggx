@@ -5370,49 +5370,6 @@ function MacLib:Window(Settings)
 	function WindowFunctions:GetScale()
 		return baseUIScale.Scale
 	end
-
-local StateTog = false 
-
-function WindowFunctions:ToggleButton()
-    for _, v in ipairs(game.CoreGui:GetChildren()) do
-        if v:IsA("ScreenGui") and v.Name == "DTHEFUCKAA" then
-            v:Destroy()
-        end
-    end
-
-    local ScreenGui = Instance.new("ScreenGui")
-    local ImageButton = Instance.new("ImageButton")
-    local UICorner = Instance.new("UICorner")
-
-    ScreenGui.Name = "DTHEFUCKAA"
-    ScreenGui.Parent = game.CoreGui
-    ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-
-    ImageButton.Parent = ScreenGui
-    ImageButton.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-    ImageButton.BorderSizePixel = 0
-    ImageButton.Position = UDim2.new(0.1208, 0, 0.0953, 0)
-    ImageButton.Size = UDim2.new(0, 50, 0, 50)
-    ImageButton.Draggable = true
-    local imageIds = {"rbxassetid://1234567890", "rbxassetid://9876543210"} -- Replace with valid IDs
-    ImageButton.Image = imageIds[math.random(1, #imageIds)]
-
-    ImageButton.MouseButton1Down:Connect(function()
-        local success, err = pcall(function()
-            StateTog = not StateTog 
-            WindowFunctions:SetState(StateTog)
-        end)
-        if not success then
-            warn("Error toggling state:", err)
-        end
-    end)
-
-    UICorner.Parent = ImageButton
-    UICorner.CornerRadius = UDim.new(1, 0)
-end
-
-
-	
 	
 	local ClassParser = {
 		["Toggle"] = {
