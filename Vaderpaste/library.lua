@@ -102,7 +102,6 @@ local abs = math.abs
             ["glow"] = {
                 ["ImageColor3"] = {}, 	
             }, 
-        }, 
      soft_sakura = {
     ["outline"] = {["BackgroundColor3"] = Color3.fromRGB(230, 204, 215), ["Color"] = Color3.fromRGB(200, 170, 190)},
     ["inline"] = {["BackgroundColor3"] = Color3.fromRGB(245, 222, 232)},
