@@ -52,7 +52,7 @@ local abs = math.abs
         keybind_path; 
         panel_open = false, 
 
-        directory = "Vaderpaste",
+        directory = "Test",
         folders = {
             "/fonts",
             "/configs"
