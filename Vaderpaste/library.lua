@@ -103,6 +103,17 @@ local abs = math.abs
                 ["ImageColor3"] = {}, 	
             }, 
         }, 
+     soft_sakura = {
+    ["outline"] = {["BackgroundColor3"] = Color3.fromRGB(230, 204, 215), ["Color"] = Color3.fromRGB(200, 170, 190)},
+    ["inline"] = {["BackgroundColor3"] = Color3.fromRGB(245, 222, 232)},
+    ["accent"] = {["BackgroundColor3"] = Color3.fromRGB(255, 182, 193), ["TextColor3"] = Color3.fromRGB(120, 60, 80),
+                  ["ImageColor3"] = Color3.fromRGB(255, 182, 193), ["BorderColor3"] = Color3.fromRGB(220, 150, 170),
+                  ["ScrollBarImageColor3"] = Color3.fromRGB(230, 170, 180)},
+    ["contrast"] = {["Color"] = Color3.fromRGB(180, 130, 150)},
+    ["text"] = {["TextColor3"] = Color3.fromRGB(100, 50, 70)},
+    ["text_outline"] = {["Color"] = Color3.fromRGB(220, 170, 190)},
+    ["glow"] = {["ImageColor3"] = Color3.fromRGB(255, 192, 203)}
+     ,}
     }
 
     local keys = {
