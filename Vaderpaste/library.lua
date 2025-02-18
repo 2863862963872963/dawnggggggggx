@@ -404,7 +404,7 @@ local themes = {
                 size = properties.Size or properties.size or dim2(0, 500, 0, 650)
             }
             
-            local animated_text = "Loading......................./n..............."
+            local animated_text = ""
             -- watermark 
                 local __holder = library:create("Frame", {
                     Parent = library.gui,
@@ -487,23 +487,26 @@ local themes = {
                     BackgroundColor3 = Color3.fromRGB(22, 22, 22)
                 })
                 
-                local name = library:create("TextLabel", {
-                    Parent = tabs,
-                    Name = "",
-                    FontFace = library.font,
-                    TextColor3 = Color3.fromRGB(170, 170, 170),
-                    BorderColor3 = Color3.fromRGB(0, 0, 0),
-                    Text = "ledger.live",
-                    TextStrokeTransparency = 0.5,
-                    Size = UDim2.new(0, 0, 1, 0),
-                    Position = UDim2.new(0, 8, 0, 0),
-                    BackgroundTransparency = 1,
-                    TextXAlignment = Enum.TextXAlignment.Left,
-                    BorderSizePixel = 0,
-                    AutomaticSize = Enum.AutomaticSize.X,
-                    TextSize = 12,
-                    BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-                })
+local name = library:create("TextLabel", {
+    Parent = tabs,
+    Name = "",
+    FontFace = library.font,
+    TextColor3 = Color3.fromRGB(170, 170, 170),
+    BorderColor3 = Color3.fromRGB(0, 0, 0),
+    Text = "ledger.live",
+    TextStrokeTransparency = 0.5,
+    Size = UDim2.new(1, -16, 0, 20), -- Set a fixed size
+    Position = UDim2.new(0, 8, 0, 0),
+    BackgroundTransparency = 1,
+    TextXAlignment = Enum.TextXAlignment.Left,
+    BorderSizePixel = 0,
+    TextSize = 12,
+    BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+    TextScaled = true,  -- Auto-scale text
+    TextWrapped = true,  -- Allow multi-line
+    TextClipped = true   -- Prevent overflow
+})
+
 
                 local TEXT_ANIMATION_GRADIENT = library:create("UIGradient", {
                     Parent = name,
@@ -558,7 +561,7 @@ task.spawn(function()
         task.wait(1) 
     end
 end)
-
+    
             -- 
             -- window
                 local inline1 = library:create("Frame", {
