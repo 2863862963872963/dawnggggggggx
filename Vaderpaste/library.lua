@@ -554,7 +554,7 @@ task.spawn(function()
 
             local formattedTime = string.format("%02d:%02d:%02d", hours, minutes, seconds)
 
-            name.Text = "⏳ Time In-Game: " .. formattedTime
+            name.Text = "⏳ Time In-Game: " .. formattedTime .. "|n\" .. " + Version 0.5 "
         end
         task.wait(1) 
     end
