@@ -1,10 +1,10 @@
 --aaa
-local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/i77lhm/vaderpaste/refs/heads/main/library.lua"))() 
+local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/2863862963872963/dawnggggggggx/refs/heads/main/Vaderpaste/library.lua"))() 
 local flags = library.flags -- access flags from here.
 
 local window = library:window({
-    name = "vaderpaste", 
-    size = UDim2.fromOffset(500, 650) 
+    name = "Vaderpaste", 
+    size = UDim2.fromOffset(500, 350) 
 }) 
 
 local legit = window:tab({name = "legit"})
