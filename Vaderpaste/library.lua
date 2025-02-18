@@ -64,56 +64,63 @@ local abs = math.abs
     local config_flags = library.config_flags
     
     local themes = {
-        preset = {
-            ["outline"] = rgb(32, 32, 38), -- 
-            ["inline"] = rgb(60, 55, 75), --
-            ["accent"] = rgb(100, 100, 255), --
-            ["contrast"] = rgb(35, 35, 47),
-            ["text"] = rgb(170, 170, 170),
-            ["unselected_text"] = rgb(90, 90, 90),
-            ["text_outline"] = rgb(0, 0, 0),
-            ["glow"] = rgb(100, 100, 255), 
-        }, 	
+    preset = {
+        ["outline"] = Color3.fromRGB(32, 32, 38),
+        ["inline"] = Color3.fromRGB(60, 55, 75),
+        ["accent"] = Color3.fromRGB(100, 100, 255),
+        ["contrast"] = Color3.fromRGB(35, 35, 47),
+        ["text"] = Color3.fromRGB(170, 170, 170),
+        ["unselected_text"] = Color3.fromRGB(90, 90, 90),
+        ["text_outline"] = Color3.fromRGB(0, 0, 0),
+        ["glow"] = Color3.fromRGB(100, 100, 255), 
+    },    
 
-        utility = {
-            ["outline"] = {
-                ["BackgroundColor3"] = {}, 	
-                ["Color"] = {}, 
-            },
-            ["inline"] = {
-                ["BackgroundColor3"] = {}, 	
-            },
-            ["accent"] = {
-                ["BackgroundColor3"] = {}, 	
-                ["TextColor3"] = {}, 
-                ["ImageColor3"] = {}, 
-                ["BorderColor3"] = {},
-                ["ScrollBarImageColor3"] = {} 
-            },
-            ["contrast"] = {
-                ["Color"] = {}, 	
-            },
-            ["text"] = {
-                ["TextColor3"] = {}, 	
-            },
-            ["text_outline"] = {
-                ["Color"] = {}, 	
-            },
-            ["glow"] = {
-                ["ImageColor3"] = {}, 	
-            }, 
-     soft_sakura = {
-    ["outline"] = {["BackgroundColor3"] = Color3.fromRGB(230, 204, 215), ["Color"] = Color3.fromRGB(200, 170, 190)},
-    ["inline"] = {["BackgroundColor3"] = Color3.fromRGB(245, 222, 232)},
-    ["accent"] = {["BackgroundColor3"] = Color3.fromRGB(255, 182, 193), ["TextColor3"] = Color3.fromRGB(120, 60, 80),
-                  ["ImageColor3"] = Color3.fromRGB(255, 182, 193), ["BorderColor3"] = Color3.fromRGB(220, 150, 170),
-                  ["ScrollBarImageColor3"] = Color3.fromRGB(230, 170, 180)},
-    ["contrast"] = {["Color"] = Color3.fromRGB(180, 130, 150)},
-    ["text"] = {["TextColor3"] = Color3.fromRGB(100, 50, 70)},
-    ["text_outline"] = {["Color"] = Color3.fromRGB(220, 170, 190)},
-    ["glow"] = {["ImageColor3"] = Color3.fromRGB(255, 192, 203)}
-     },
+    utility = {
+        ["outline"] = {
+            ["BackgroundColor3"] = {},    
+            ["Color"] = {}, 
+        },
+        ["inline"] = {
+            ["BackgroundColor3"] = {},    
+        },
+        ["accent"] = {
+            ["BackgroundColor3"] = {},    
+            ["TextColor3"] = {}, 
+            ["ImageColor3"] = {}, 
+            ["BorderColor3"] = {},
+            ["ScrollBarImageColor3"] = {} 
+        },
+        ["contrast"] = {
+            ["Color"] = {},    
+        },
+        ["text"] = {
+            ["TextColor3"] = {},    
+        },
+        ["text_outline"] = {
+            ["Color"] = {},    
+        },
+        ["glow"] = {
+            ["ImageColor3"] = {},    
+        }
+    },
+
+    soft_sakura = {
+        ["outline"] = {["BackgroundColor3"] = Color3.fromRGB(230, 204, 215), ["Color"] = Color3.fromRGB(200, 170, 190)},
+        ["inline"] = {["BackgroundColor3"] = Color3.fromRGB(245, 222, 232)},
+        ["accent"] = {
+            ["BackgroundColor3"] = Color3.fromRGB(255, 182, 193), 
+            ["TextColor3"] = Color3.fromRGB(120, 60, 80),
+            ["ImageColor3"] = Color3.fromRGB(255, 182, 193), 
+            ["BorderColor3"] = Color3.fromRGB(220, 150, 170),
+            ["ScrollBarImageColor3"] = Color3.fromRGB(230, 170, 180)
+        },
+        ["contrast"] = {["Color"] = Color3.fromRGB(180, 130, 150)},
+        ["text"] = {["TextColor3"] = Color3.fromRGB(100, 50, 70)},
+        ["text_outline"] = {["Color"] = Color3.fromRGB(220, 170, 190)},
+        ["glow"] = {["ImageColor3"] = Color3.fromRGB(255, 192, 203)}
     }
+}
+
 
     local keys = {
         [Enum.KeyCode.LeftShift] = "LS",
