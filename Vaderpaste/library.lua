@@ -63,47 +63,101 @@ local abs = math.abs
     local flags = library.flags
     local config_flags = library.config_flags
     
-    local themes = {
-        preset = {
-            ["outline"] = rgb(32, 32, 38), -- 
-            ["inline"] = rgb(60, 55, 75), --
-            ["accent"] = rgb(100, 100, 255), --
-            ["contrast"] = rgb(35, 35, 47),
-            ["text"] = rgb(170, 170, 170),
-            ["unselected_text"] = rgb(90, 90, 90),
-            ["text_outline"] = rgb(0, 0, 0),
-            ["glow"] = rgb(100, 100, 255), 
-        }, 	
+local themes = {
+    preset = {
+        ["outline"] = Color3.fromRGB(32, 32, 38),
+        ["inline"] = Color3.fromRGB(60, 55, 75),
+        ["accent"] = Color3.fromRGB(100, 100, 255),
+        ["contrast"] = Color3.fromRGB(35, 35, 47),
+        ["text"] = Color3.fromRGB(170, 170, 170),
+        ["unselected_text"] = Color3.fromRGB(90, 90, 90),
+        ["text_outline"] = Color3.fromRGB(0, 0, 0),
+        ["glow"] = Color3.fromRGB(100, 100, 255), 
+    },    
 
-        utility = {
-            ["outline"] = {
-                ["BackgroundColor3"] = {}, 	
-                ["Color"] = {}, 
-            },
-            ["inline"] = {
-                ["BackgroundColor3"] = {}, 	
-            },
-            ["accent"] = {
-                ["BackgroundColor3"] = {}, 	
-                ["TextColor3"] = {}, 
-                ["ImageColor3"] = {}, 
-                ["BorderColor3"] = {},
-                ["ScrollBarImageColor3"] = {} 
-            },
-            ["contrast"] = {
-                ["Color"] = {}, 	
-            },
-            ["text"] = {
-                ["TextColor3"] = {}, 	
-            },
-            ["text_outline"] = {
-                ["Color"] = {}, 	
-            },
-            ["glow"] = {
-                ["ImageColor3"] = {}, 	
-            }, 
-        }, 
+    utility = {
+        ["outline"] = { ["BackgroundColor3"] = {}, ["Color"] = {} },
+        ["inline"] = { ["BackgroundColor3"] = {} },
+        ["accent"] = { ["BackgroundColor3"] = {}, ["TextColor3"] = {}, ["ImageColor3"] = {}, ["BorderColor3"] = {}, ["ScrollBarImageColor3"] = {} },
+        ["contrast"] = { ["Color"] = {} },
+        ["text"] = { ["TextColor3"] = {} },
+        ["text_outline"] = { ["Color"] = {} },
+        ["glow"] = { ["ImageColor3"] = {} }
+    },
+
+    soft_sakura = {
+        ["outline"] = {["BackgroundColor3"] = Color3.fromRGB(230, 204, 215), ["Color"] = Color3.fromRGB(200, 170, 190)},
+        ["inline"] = {["BackgroundColor3"] = Color3.fromRGB(245, 222, 232)},
+        ["accent"] = {["BackgroundColor3"] = Color3.fromRGB(255, 182, 193), ["TextColor3"] = Color3.fromRGB(120, 60, 80),
+                      ["ImageColor3"] = Color3.fromRGB(255, 182, 193), ["BorderColor3"] = Color3.fromRGB(220, 150, 170),
+                      ["ScrollBarImageColor3"] = Color3.fromRGB(230, 170, 180)},
+        ["contrast"] = {["Color"] = Color3.fromRGB(180, 130, 150)},
+        ["text"] = {["TextColor3"] = Color3.fromRGB(100, 50, 70)},
+        ["text_outline"] = {["Color"] = Color3.fromRGB(220, 170, 190)},
+        ["glow"] = {["ImageColor3"] = Color3.fromRGB(255, 192, 203)}
+    },
+
+    blossom = {
+        ["outline"] = {["BackgroundColor3"] = Color3.fromRGB(220, 180, 200), ["Color"] = Color3.fromRGB(200, 160, 180)},
+        ["inline"] = {["BackgroundColor3"] = Color3.fromRGB(240, 200, 215)},
+        ["accent"] = {["BackgroundColor3"] = Color3.fromRGB(255, 170, 180), ["TextColor3"] = Color3.fromRGB(110, 50, 70),
+                      ["ImageColor3"] = Color3.fromRGB(255, 150, 170), ["BorderColor3"] = Color3.fromRGB(210, 130, 150),
+                      ["ScrollBarImageColor3"] = Color3.fromRGB(220, 140, 160)},
+        ["contrast"] = {["Color"] = Color3.fromRGB(190, 120, 140)},
+        ["text"] = {["TextColor3"] = Color3.fromRGB(90, 40, 60)},
+        ["text_outline"] = {["Color"] = Color3.fromRGB(210, 150, 170)},
+        ["glow"] = {["ImageColor3"] = Color3.fromRGB(255, 180, 190)}
+    },
+
+    athletics = {
+        ["outline"] = {["BackgroundColor3"] = Color3.fromRGB(50, 50, 50), ["Color"] = Color3.fromRGB(80, 80, 80)},
+        ["inline"] = {["BackgroundColor3"] = Color3.fromRGB(70, 70, 70)},
+        ["accent"] = {["BackgroundColor3"] = Color3.fromRGB(200, 20, 20), ["TextColor3"] = Color3.fromRGB(255, 255, 255),
+                      ["ImageColor3"] = Color3.fromRGB(200, 20, 20), ["BorderColor3"] = Color3.fromRGB(150, 10, 10),
+                      ["ScrollBarImageColor3"] = Color3.fromRGB(180, 15, 15)},
+        ["contrast"] = {["Color"] = Color3.fromRGB(40, 40, 40)},
+        ["text"] = {["TextColor3"] = Color3.fromRGB(255, 255, 255)},
+        ["text_outline"] = {["Color"] = Color3.fromRGB(0, 0, 0)},
+        ["glow"] = {["ImageColor3"] = Color3.fromRGB(255, 0, 0)}
+    },
+
+    midnight = {
+        ["outline"] = {["BackgroundColor3"] = Color3.fromRGB(20, 20, 30), ["Color"] = Color3.fromRGB(40, 40, 50)},
+        ["inline"] = {["BackgroundColor3"] = Color3.fromRGB(30, 30, 40)},
+        ["accent"] = {["BackgroundColor3"] = Color3.fromRGB(80, 80, 150), ["TextColor3"] = Color3.fromRGB(170, 170, 255),
+                      ["ImageColor3"] = Color3.fromRGB(80, 80, 150), ["BorderColor3"] = Color3.fromRGB(60, 60, 130),
+                      ["ScrollBarImageColor3"] = Color3.fromRGB(70, 70, 140)},
+        ["contrast"] = {["Color"] = Color3.fromRGB(25, 25, 35)},
+        ["text"] = {["TextColor3"] = Color3.fromRGB(150, 150, 220)},
+        ["text_outline"] = {["Color"] = Color3.fromRGB(0, 0, 0)},
+        ["glow"] = {["ImageColor3"] = Color3.fromRGB(100, 100, 200)}
+    },
+
+    ocean_breeze = {
+        ["outline"] = {["BackgroundColor3"] = Color3.fromRGB(180, 220, 240), ["Color"] = Color3.fromRGB(160, 200, 220)},
+        ["inline"] = {["BackgroundColor3"] = Color3.fromRGB(200, 240, 255)},
+        ["accent"] = {["BackgroundColor3"] = Color3.fromRGB(80, 170, 255), ["TextColor3"] = Color3.fromRGB(50, 90, 150),
+                      ["ImageColor3"] = Color3.fromRGB(80, 170, 255), ["BorderColor3"] = Color3.fromRGB(60, 150, 220),
+                      ["ScrollBarImageColor3"] = Color3.fromRGB(70, 160, 230)},
+        ["contrast"] = {["Color"] = Color3.fromRGB(140, 190, 220)},
+        ["text"] = {["TextColor3"] = Color3.fromRGB(40, 100, 160)},
+        ["text_outline"] = {["Color"] = Color3.fromRGB(180, 220, 250)},
+        ["glow"] = {["ImageColor3"] = Color3.fromRGB(100, 190, 255)}
+    },
+
+    sunset_glow = {
+        ["outline"] = {["BackgroundColor3"] = Color3.fromRGB(220, 150, 100), ["Color"] = Color3.fromRGB(200, 130, 90)},
+        ["inline"] = {["BackgroundColor3"] = Color3.fromRGB(250, 180, 130)},
+        ["accent"] = {["BackgroundColor3"] = Color3.fromRGB(255, 100, 80), ["TextColor3"] = Color3.fromRGB(100, 40, 20),
+                      ["ImageColor3"] = Color3.fromRGB(255, 100, 80), ["BorderColor3"] = Color3.fromRGB(220, 80, 60),
+                      ["ScrollBarImageColor3"] = Color3.fromRGB(230, 90, 70)},
+        ["contrast"] = {["Color"] = Color3.fromRGB(190, 90, 60)},
+        ["text"] = {["TextColor3"] = Color3.fromRGB(80, 30, 10)},
+        ["text_outline"] = {["Color"] = Color3.fromRGB(250, 150, 120)},
+        ["glow"] = {["ImageColor3"] = Color3.fromRGB(255, 120, 100)}
     }
+}
+
 
     local keys = {
         [Enum.KeyCode.LeftShift] = "LS",
