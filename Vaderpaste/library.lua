@@ -113,7 +113,7 @@ local abs = math.abs
     ["text"] = {["TextColor3"] = Color3.fromRGB(100, 50, 70)},
     ["text_outline"] = {["Color"] = Color3.fromRGB(220, 170, 190)},
     ["glow"] = {["ImageColor3"] = Color3.fromRGB(255, 192, 203)}
-     ,}
+     },
     }
 
     local keys = {
