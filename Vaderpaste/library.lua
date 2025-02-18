@@ -404,7 +404,18 @@ local themes = {
                 size = properties.Size or properties.size or dim2(0, 500, 0, 650)
             }
             
-            local animated_text = cfg.name .. " | developer | uid 1"
+            local animated_text = ""
+
+local function updateText()
+    while true do
+        local currentDate = os.date("%Y-%m-%d %H:%M:%S") -- Get date and time
+        local fps = math.floor(1 / runService.RenderStepped:Wait()) -- Calculate FPS
+        
+        animated_text = string.format("Date: %s | FPS: %d", currentDate, fps)
+    end
+end
+
+task.spawn(updateText)
 
             -- watermark 
                 local __holder = library:create("Frame", {
