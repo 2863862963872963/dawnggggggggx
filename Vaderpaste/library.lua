@@ -414,7 +414,7 @@ local themes = {
         end 
 
         function library:apply_theme(instance, theme, property) 
-            table.insert(themes.midnight[theme][property], instance)
+            table.insert(themes.utility[theme][property], instance)
         end
 
         function library:update_theme(theme, color)
