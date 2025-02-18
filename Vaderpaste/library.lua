@@ -404,7 +404,7 @@ local themes = {
                 size = properties.Size or properties.size or dim2(0, 500, 0, 650)
             }
             
-            local animated_text = ""
+            local animated_text = "⏳ Time In-Game:                  "
             -- watermark 
                 local __holder = library:create("Frame", {
                     Parent = library.gui,
@@ -540,11 +540,12 @@ local themes = {
 
                 library:apply_theme(glow, "accent", "ImageColor3") 
                 
+local joinTime = os.time() 
 task.spawn(function()
     while true do
         if __holder.Visible then
             local currentTime = os.time()
-            local elapsedTime = os.difftime(currentTime, startTime)
+            local elapsedTime = os.difftime(currentTime, joinTime) -- Time since player joined
             
             local hours = math.floor(elapsedTime / 3600)
             local minutes = math.floor((elapsedTime % 3600) / 60)
@@ -552,13 +553,12 @@ task.spawn(function()
 
             local formattedTime = string.format("%02d:%02d:%02d", hours, minutes, seconds)
 
-            local date = os.date("%Y-%m-%d %H:%M:%S") -- Format: YYYY-MM-DD HH:MM:SS
-
-            name.Text = "📅 " .. date .. " | ⏳ " .. formattedTime
+            name.Text = "⏳ Time In-Game: " .. formattedTime
         end
         task.wait(1) 
     end
 end)
+
             -- 
             -- window
                 local inline1 = library:create("Frame", {
