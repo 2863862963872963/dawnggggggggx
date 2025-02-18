@@ -405,18 +405,6 @@ local themes = {
             }
             
             local animated_text = ""
-
-local function updateText()
-    while true do
-        local currentDate = os.date("%Y-%m-%d %H:%M:%S") -- Get date and time
-        local fps = math.floor(1 / runService.RenderStepped:Wait()) -- Calculate FPS
-        
-        animated_text = string.format("Date: %s | FPS: %d", currentDate, fps)
-    end
-end
-
-task.spawn(updateText)
-
             -- watermark 
                 local __holder = library:create("Frame", {
                     Parent = library.gui,
@@ -552,19 +540,26 @@ task.spawn(updateText)
 
                 library:apply_theme(glow, "accent", "ImageColor3") 
                 
-                task.spawn(function()
-                    while true do 
-                        if __holder.Visible then 
-                            for i = 1, #animated_text do 
-                                task.wait(.2)
-                                name.Text = animated_text[i]
-                            end 
-                        end 
-                        task.wait(.2)
-                    end 
-                end)
-            -- 
+task.spawn(function()
+    while true do
+        if __holder.Visible then
+            local currentTime = os.time()
+            local elapsedTime = os.difftime(currentTime, startTime)
+            
+            local hours = math.floor(elapsedTime / 3600)
+            local minutes = math.floor((elapsedTime % 3600) / 60)
+            local seconds = elapsedTime % 60
 
+            local formattedTime = string.format("%02d:%02d:%02d", hours, minutes, seconds)
+
+            local date = os.date("%Y-%m-%d %H:%M:%S") -- Format: YYYY-MM-DD HH:MM:SS
+
+            name.Text = "📅 " .. date .. " | ⏳ " .. formattedTime
+        end
+        task.wait(1) 
+    end
+end)
+            -- 
             -- window
                 local inline1 = library:create("Frame", {
                     Parent = library.gui,
