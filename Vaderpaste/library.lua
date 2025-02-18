@@ -52,7 +52,7 @@ local abs = math.abs
         keybind_path; 
         panel_open = false, 
 
-        directory = "inactivity",
+        directory = "Jqk",
         folders = {
             "/fonts",
             "/configs"
