@@ -1,6 +1,10 @@
 local ReGui = loadstring(game:HttpGet('https://raw.githubusercontent.com/depthso/Dear-ReGui/refs/heads/main/ReGui.lua'))()
-ReGui:Init()
+local PrefabsId = `rbxassetid://{ReGui.PrefabsId}`
 
+--// Externally import the Prefabs asset
+ReGui:Init({
+	Prefabs = game:GetService("InsertService"):LoadLocalAsset(PrefabsId)
+})
 --// Watermark demo
 local Watermark = ReGui.Elements:Canvas({
 	Parent = ReGui.Container.Windows,
