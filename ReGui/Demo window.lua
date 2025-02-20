@@ -1,4 +1,4 @@
-local ReGui = require(game.ReplicatedStorage.ReGui)
+local ReGui = loadstring(game:HttpGet('https://raw.githubusercontent.com/depthso/Dear-ReGui/refs/heads/main/ReGui.lua'))()
 ReGui:Init()
 
 --// Watermark demo
