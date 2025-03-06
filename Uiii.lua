@@ -13,12 +13,13 @@ Tab.__index = Tab
 -- Create the library instance
 function PeakUILib.new()
     local self = setmetatable({}, PeakUILib)
+    self.IsVisible = true
+    self.ToggleKey = Enum.KeyCode.F4  -- Default toggle key
     return self
 end
 
 -- Create a window with a config table
 function PeakUILib:CreateWindow(config)
-    -- Validate config
     config = config or {}
     local uisize = config.uisize or UDim2.new(0, 300, 0, 200)
     local title = config.Title or "Peak UI"
@@ -26,8 +27,9 @@ function PeakUILib:CreateWindow(config)
 
     -- ScreenGui setup
     local screenGui = Instance.new("ScreenGui")
-    screenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+    screenGui.Parent = game:GetService("CoreGui")  -- CoreGui for better visibility
     screenGui.Name = "PeakUI"
+    screenGui.IgnoreGuiInset = true  -- Makes it work better with mobile screens
 
     -- Main frame
     local frame = Instance.new("Frame")
@@ -46,7 +48,7 @@ function PeakUILib:CreateWindow(config)
 
     -- Title text
     local titleText = Instance.new("TextLabel")
-    titleText.Size = UDim2.new(1, 0, 0, 30)
+    titleText.Size = UDim2.new(1, -40, 0, 30)  -- Space for toggle button
     titleText.BackgroundTransparency = 1
     titleText.Text = title
     titleText.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -56,7 +58,7 @@ function PeakUILib:CreateWindow(config)
 
     -- Subtitle text
     local subtitleText = Instance.new("TextLabel")
-    subtitleText.Size = UDim2.new(1, 0, 0, 20)
+    subtitleText.Size = UDim2.new(1, -40, 0, 20)
     subtitleText.Position = UDim2.new(0, 0, 0, 30)
     subtitleText.BackgroundTransparency = 1
     subtitleText.Text = subtitle
@@ -65,23 +67,40 @@ function PeakUILib:CreateWindow(config)
     subtitleText.TextSize = 14
     subtitleText.Parent = titleBar
 
-    -- Dragging functionality
+    -- Mobile toggle button
+    local toggleButton = Instance.new("TextButton")
+    toggleButton.Size = UDim2.new(0, 30, 0, 30)
+    toggleButton.Position = UDim2.new(1, -35, 0, 10)
+    toggleButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    toggleButton.Text = "X"
+    toggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    toggleButton.Font = Enum.Font.SourceSans
+    toggleButton.TextSize = 16
+    toggleButton.Parent = titleBar
+
+    -- Dragging functionality (PC and Mobile)
     local dragging, dragInput, dragStart, startPos
+    local function startDrag(input)
+        dragging = true
+        dragStart = input.Position
+        startPos = frame.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+
     titleBar.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            dragging = true
-            dragStart = input.Position
-            startPos = frame.Position
-            input.Changed:Connect(function()
-                if input.UserInputState == Enum.UserInputState.End then
-                    dragging = false
-                end
-            end)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or 
+           input.UserInputType == Enum.UserInputType.Touch then
+            startDrag(input)
         end
     end)
 
     titleBar.InputChanged:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseMovement then
+        if input.UserInputType == Enum.UserInputType.MouseMovement or 
+           input.UserInputType == Enum.UserInputType.Touch then
             dragInput = input
         end
     end)
@@ -98,11 +117,33 @@ function PeakUILib:CreateWindow(config)
         end
     end)
 
-    -- Store references for later use
+    -- Toggle functionality
+    local function toggleUI()
+        self.IsVisible = not self.IsVisible
+        frame.Visible = self.IsVisible
+    end
+
+    toggleButton.MouseButton1Click:Connect(toggleUI)
+
+    -- Keybind toggle
+    UserInputService.InputBegan:Connect(function(input)
+        if input.KeyCode == self.ToggleKey and not UserInputService:GetFocusedTextBox() then
+            toggleUI()
+        end
+    end)
+
+    -- Store references
     self.MainFrame = frame
+    self.ScreenGui = screenGui
     self.TitleText = titleText
     self.SubtitleText = subtitleText
+    self.ToggleButton = toggleButton
     return self
+end
+
+-- Set toggle key
+function PeakUILib:SetToggleKey(keyCode)
+    self.ToggleKey = keyCode or Enum.KeyCode.F4
 end
 
 -- Setter for title
@@ -171,7 +212,8 @@ function PeakUILib:CreateToggle(text, default, callback)
 
     local state = default or false
     toggle.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or 
+           input.UserInputType == Enum.UserInputType.Touch then
             state = not state
             TweenService:Create(toggle, TweenInfo.new(0.2), {
                 BackgroundColor3 = state and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
@@ -320,7 +362,8 @@ function Tab:CreateToggle(text, default, callback)
 
     local state = default or false
     toggle.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or 
+           input.UserInputType == Enum.UserInputType.Touch then
             state = not state
             TweenService:Create(toggle, TweenInfo.new(0.2), {
                 BackgroundColor3 = state and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
