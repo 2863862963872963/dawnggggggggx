@@ -142,7 +142,7 @@ local SaveManager = {} do
 			return false, "No config file is selected"
 		end
 
-		local fullPath = `{self.Folder}/settings/{name}.json`
+		local fullPath = `{self.Folder}/{name}.json`
 
 		local data = {
 			objects = {}
@@ -173,7 +173,7 @@ local SaveManager = {} do
 			return false, "No config file is selected"
 		end
 
-		local file = `{self.Folder}/settings/{name}.json`
+		local file = `{self.Folder}/{name}.json`
 		if not isfile(file) then return false, "invalid file" end
 
 		local success, decoded = pcall(httpService.JSONDecode, httpService, readfile(file))
