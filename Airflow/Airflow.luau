@@ -3,6 +3,7 @@
 
     Author: 4lpaca
     License: MIT
+    https://cat-sus.gitbook.io/airflow
 --]]
 
 -- Type --
