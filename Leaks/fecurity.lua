@@ -1,4 +1,4 @@
-print[[
+--[[
 SHOUT OUT TO THE TEAM : 
 
 - nomercy.rip
@@ -72,7 +72,7 @@ lcccc:::::::;;;::::::ccccc:::::;;;;;;;::clllllllooooooddxxxxddddddoooooool::::::
 clllcccc:::::::ccclccccccccc::::;;;;;;;;;:::::cccccclllooddddoooooooooooooollcc::cccccllllooooooollo
 ccclccccccc:::ccccccccccccc::::::;;;;;;;;;;:::ccccclloooooooooooooooooooodddddoolllccclllooooooooooo
 ccccccccccccc::::::cccccc::::::::;;;;;;;;;::cloooddddddddooooollooooooooddddddddooooollloooooooooooo
-]])
+--]]
 
 if getgenv().loaded then
 	getgenv().library:unload_menu()
