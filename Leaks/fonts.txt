@@ -1,0 +1,8 @@
+https://github.com/i77lhm/storage/blob/main/fonts/fs-tahoma-8px.ttf
+-> https://files.catbox.moe/fksdez.ttf
+
+https://github.com/f1nobe7650/Nebula/raw/refs/heads/main/Minecraftia-Regular.ttf
+-> https://files.catbox.moe/95r2wo.ttf
+
+https://github.com/i77lhm/storage/raw/refs/heads/main/fonts/ProggyTiny.ttf
+-> https://files.catbox.moe/94ooyr.ttf
