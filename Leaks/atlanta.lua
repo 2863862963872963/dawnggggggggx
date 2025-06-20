@@ -1,4 +1,4 @@
-print[[
+--[[
 SHOUT OUT TO THE TEAM : 
 
 - nomercy.rip
@@ -21,58 +21,7 @@ SHOUT OUT TO THE TEAM :
 HONOURABLE MENTIONS : 
 - alex gut
 
-
-ddxdddo:.......................................''''........':lllllooooddddxxxxxxxxxxxxxxxxxxxxxxxxxx
-dddddddl,...........'....''''.........'........'''''.......,:llllloooodddddxxxxxxxxxxxxxxxxxxxxxxxxx
-dddddddo:.......'',,,,,,,,,,,''..................'''......';colllloolodddddxxxxxxxxxxxxxxxxxxxxxxxxx
-dddddddo:......',,,;;;;;;;;;;,,,,''''''''.......'...'''''',coolllllllodddddxxxxxxxxxxxxxxxxxxxxxxxxx
-dddddlc;,'.....,,;;;;;;;::::::;;;;,,,,;;;,,'',,,,,,,,;;;;,:lolllccclloodddddxxxxxxxxxxxxxxxxxxxxxxxx
-ddddo:,,,'....',;;;;;;;;;;,,,,,,;;;;;;:::::::::::::::::::cloolccc::cllodddddxxxxxxxxxxxxxxxxxxxxxxxx
-ddddo;,,,,'...';;;;;;;,,,,,,'''..'',,;;::::::::;;;;::::cloooolc:;;:ccooddddddxxxxxxxxxxxxxxxxxxxxxxx
-ddddoc;,,,'...,;:;;;;;,,,,'''''''''',,;;::;;;,,''''',,;:looodolc:::cloddddddddxxxxxxxxxxxxxxxxxxxxxx
-dddddoc;,''''';::::;;;,,''....'''.',,;;;;;;,,,'''',,,;;:looddolcc:cloodddddddddxxxxxxxxxxxxxxxxxxxxx
-ddddddo:;,,,,,;:::::::;;;;;,''''''',,;;::;,,''..',,,,;clooddoolcccclodddddddddddxxxxxxxxxxxxxxxxxxxx
-dddddddoc:;;;;;::ccc:::::::;;,,,,,;;;;::::;,'',,,;;;;:cooodoolccllcloddddddddddddxxxxxxxxxxxxxxxxxxx
-ddddddddl::;;;;:::cccccc::::;;;;:::::::cc:;;;,;;;::::cloodddoolllllloddddddddddddddxxxxxxxxxxxxxxxxx
-ddddddddolc:;;;:::::ccccc::::::::::::::cc:::::::::cccclodddddoooollodddddddddddddddxxxxxxxxxxxxxxxxx
-ddddddddddoc:::;:;;;:cccc::::::;;;;;:::ccc:::::::cccclooddddddddolloddddddddddddddddddddddxxxxxxdddd
-ddddddddddol::::::;:::::::::::;;;;;;::ccccc::::cccccllodddddddddollodddddddddddddddddddddddddddddddd
-ddddddddddol::::::::::::::::::;;;;;;;::::::::::ccccllooooddddddolllodddddddddddddddddddddddddddddddd
-ddddddddddoc::::::::::::::::::;;;;,,,,;;;;;:::::ccllooooddddddoolloddddddddddddddddddddddddddddddddd
-ddddddddddoc:::::::::::::::::::;;;;;;;,;;;;:::::clloooooooodddoolloddddddddddddddddddddddddddddddddd
-dddddddddolc:;:::::::::::::;;;;;;;,,,,,,;;;;:::cloooooooooooooollloddddddddddddddddddddddddddddddddd
-ddddddooooc:;;;:::::::::::;;;,,'...''',,,,;;::clooooooooooooooollloddddddddddddddddddddddddddddddddd
-ddddoooooc:;;;;;;;;::::::;;;;;;,'.',''.'',;::looooooooooooooooollloodddddddddddddddddddddddddddddddd
-ooooooolc:;;;;;;;;;;;:::::::;;;;,,,,,'.'',;;cloooooooooooooooolllloooddddddddddddddddddddddddddddddd
-odddoolc::;;;;;;;;;;;;;;:::::::;;;,,,,,,,,,,;;cllllooooooooooolllooooodddddddddddddddddddddddddddddd
-dddddollc:;;;;;;:::;;;;;;;;::::::;;;;;;;;,,,,,',;:clllodddddollllooooooodddddddddddddddddddddddddddd
-ddddddoll::;;;;;;:::::;;;;;;;;:;;;;;;;;,,;;;,,,'',;:ccclodxxxdollooooooodddddddddddddddddddddddddddd
-ddddddoolc:;;;;;;;;::::::;;;;;;;;;;;;;'.';;;;;;;;,,,,,,,:loddxxdoooooooooooddddddddddddddddddddddddd
-xxdooodolcc:;;,,,;;;:::::::;;;;;;;;;;,'.';;;;;;;;;;;;;,'',:odxdxxxdooooooooooddddddddddddddddddddddd
-ddxdooooolcc:;;;,,,,;;;;;::;;;;;;;;;;,'',;;;;;;;;;;;;::;,,,;clclodxxddoooooooooooddddddddddddddddddd
-ddddddoloolcc::;;;,,,,,,;;;;;;;;;;;;,,'';;;;;;;:;;;;;:::::c:;;;;;:ldxxdooooooooooooooddddddddddddddd
-xxdddddollllcc::;;;;;,,,,,,,;;;;;,,,,,,,;;;;;;;::;;;::::::cclc::;;;:coddoooooooooooooooooddddddddddd
-xxxxxxxddolllc::;;;;;;;;;;;,,,,,,,,,,;;;;;;;;;;:::::::::::cclloolcc:;:odddoooooooooooooooooooooddddd
-xxxxxxddddoollc::;;;;;;;;;;;;;;;;;;;;;;;;;,;;;;;::::::::ccccclloodooooddxxddoooooooooooooooooooooood
-xxxxxxdddddoollc:;;;;;;;;;;,,,,;;;;;;;;;;;,;;;;;:::::::coddoccllooooodddddddddddddddoooooooooooooooo
-xxxxxxxxddddoollc:;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;::::::clooolccllloooooodddddxxxxxxxxxddddddooooooooo
-xxxxxxxxdddddoollc:;;;;;;;;;;;;;;;;;;;;;;;;;;;;;::::::cclllcccccllooooodddddxxxxxxxxxxxxxxxxxxdddddd
-dxxxxxxxxxddddoollc::;;;;;;;;;;;;;;;;;;;;;;;;;;;;::::::ccccclcccllooooddddddxxxxxxxxxxxxxxxxxxxxxxxx
-xxxxxxxdxxxdddddollc::;;;;;;;;;;;;;;;;;;;;;;;;;;;:::::::ccclllcclllooddddddxxxxxxxxxxxxxxxxxxxxxxxxx
-dddddddddxxxddddoollcc::;;;;;;;;;;;;;;;,,;;;;;;;;:::;::::cccclllllloooddddddddxxxxxxxxxxxxxxxxxxxxxx
-ddddddddddddddddooollcc:::;;;;;;;;;;;;;,,;;;;;;;;;;;;::::ccccllllllloooooddddddddddddddddddxdddxxxxx
-dddddddddddddddddooollccc::::;;;;;;;;;;,,;;;;;;;;;;;;:::::ccccllllllloooooooooddddddddddddddddddxxxx
-oooooooooooooddddoollllccc:::;;;;;;;;;;;;;;;;;;;;:::::;;;:::cccloolclllloooooooodddddxxdddollllddxxx
-oooooooooolllloollllccccc::::;;;;;;;;;;;;;;:;;;;;:::::;;;:::ccllodolcclllllllooodddxxdddddoccccodddd
-lllllllllllllccccccc::::::;;;;;;;;;;;;;;;:cccccccccc::::::ccodddxxxdlcccccclllooddddddddddooollooodd
-cccccccccccc:::::::::;;;;;;;;;;;;;;;;;;:codxxxxxxxxxddoooddxxkkkkkxxdl:::ccclloooooooooodooooolllood
-lcccc:::::::::;;;;;;;;;;;;;;;;;;;;;;;;:ldxxxxxxkkkkkkkkkkkkkkkkkxxxxdol::::cccllllllllooodddoolllloo
-lccc::::::::;;;;;;;;;;;;;;;;;;;;;;;;;;:looodddddxxxxxxkkkOkkxxxxxxddddolc::::ccccccllloooodoooolcclo
-lcccc:::::::;;;::::::ccccc:::::;;;;;;;::clllllllooooooddxxxxddddddoooooool:::::::ccclllloooooolllllo
-clllcccc:::::::ccclccccccccc::::;;;;;;;;;:::::cccccclllooddddoooooooooooooollcc::cccccllllooooooollo
-ccclccccccc:::ccccccccccccc::::::;;;;;;;;;;:::ccccclloooooooooooooooooooodddddoolllccclllooooooooooo
-ccccccccccccc::::::cccccc::::::::;;;;;;;;;::cloooddddddddooooollooooooooddddddddooooollloooooooooooo
-]])
+--]]
 
 -- variables
 local uis = cloneref(game:GetService("UserInputService"))
