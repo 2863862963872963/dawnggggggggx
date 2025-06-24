@@ -93,6 +93,17 @@ function __Class:tween(Position)
 	end
 end
 
+function __Class:PathTo(destination)
+	local PathfindingService = game:GetService("PathfindingService")
+	local path = PathfindingService:CreatePath()
+	path:ComputeAsync(HumanoidRootPart.Position, destination.Position)
+	if path.Status == Enum.PathStatus.Complete then
+		for _, waypoint in ipairs(path:GetWaypoints()) do
+			Humanoid:MoveTo(waypoint.Position)
+			Humanoid.MoveToFinished:Wait()
+		end
+	end
+end
 
 function __Class:rotate(v: Vector3)
 	if HumanoidRootPart then
@@ -243,13 +254,6 @@ function __Class:ipairs(meta: Instance, callback: func)
 	end;
 end;
 
-function __Class:touchconnect(v: BasePart)
-	if v:IsA("BasePart") then
-		firetouchinterest(HumanoidRootPart, v, 1);
-		firetouchinterest(HumanoidRootPart, v, 0);
-	end;
-end;
-
 function __Class:IsEquiped(v: string)
 	return Character:FindFirstChild(v);
 end;
@@ -298,6 +302,93 @@ function __Class:Rejoin()
 		TeleportService:TeleportToPlaceInstance(PlaceId, JobId, LocalPlayer)
 	end
 end
+
+function __Class:SetCameraFocus(target)
+	Camera.CameraSubject = target
+end;
+
+function __Class:FreeCam()
+	Camera.CameraType = Enum.CameraType.Scriptable
+end;
+
+function __Class:ResetCam()
+	Camera.CameraType = Enum.CameraType.Custom
+end;
+
+function __Class:FirePrompt(object)
+	if object:IsA("ProximityPrompt") then
+		fireproximityprompt(object)
+	elseif object:IsA("ClickDetector") then
+		fireclickdetector(object)
+	end
+end
+
+function __Class:KeyPress(keycode)
+    VirtualInputManager:SendKeyEvent(true, keycode, false, game)
+    task.wait(0.05)
+    VirtualInputManager:SendKeyEvent(false, keycode, false, game)
+end
+
+function __Class:GetStats()
+	local fps = math.floor(1 / RunService.RenderStepped:Wait())
+	local ping = math.floor(Stats.Network.ServerStatsItem["Data Ping"]:GetValue())
+	local mem = math.floor(collectgarbage("count"))
+	local pos = HumanoidRootPart and HumanoidRootPart.Position or Vector3.zero
+	local physics = Stats.Workspace.HeartbeatFPS:GetValue()
+
+	return {
+		FPS = fps,
+		Ping = ping .. "ms",
+		Memory = mem .. " KB",
+		Position = tostring(pos),
+		PhysicsFPS = math.floor(physics),
+		PlayerCount = #Players:GetPlayers(),
+		Time = os.date("%H:%M:%S")
+	}
+end
+
+function __Class:Freeze()
+	if HumanoidRootPart then
+		HumanoidRootPart.Anchored = true
+	end
+end
+
+function __Class:unFreeze()
+	if HumanoidRootPart then
+		HumanoidRootPart.Anchored = false
+	end
+end
+
+function __Class:IsTouching(part)
+	if not HumanoidRootPart or not part then return false end
+	local touching = HumanoidRootPart:GetTouchingParts()
+	for _, p in ipairs(touching) do
+		if p == part then return true end
+	end
+	return false
+end
+
+function __Class:Touch(part)
+	if not HumanoidRootPart or not part then return end
+	if part:FindFirstChildOfClass("TouchTransmitter") or part:FindFirstChildWhichIsA("TouchInterest") then
+		firetouchinterest(HumanoidRootPart, part, 0)
+		task.wait()
+		firetouchinterest(HumanoidRootPart, part, 1)
+	end
+end
+
+function __Class:IsTouching(part)
+	if not HumanoidRootPart or not part then return false end
+	local touchingParts = HumanoidRootPart:GetTouchingParts()
+	for _, touching in ipairs(touchingParts) do
+		if touching == part then
+			return true
+		end
+	end
+	return false
+end
+
+
 
 Configs = Load();
 
