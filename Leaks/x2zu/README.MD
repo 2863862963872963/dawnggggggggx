@@ -6,4 +6,4 @@ there is no rules for advertise so i put my  link discord thanks!
 Discord: https://discord.gg/FmMuvkaWvG
 Github: https://github.com/x2zu
 
-all leaked by x2zu ig he goated
+all i get from : https://discord.gg/FmMuvkaWvG
