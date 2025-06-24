@@ -1,3 +1,5 @@
+-- made by Stellar Hub | discord.gg/FmMuvkaWvG
+
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local Lighting = game:GetService("Lighting")
