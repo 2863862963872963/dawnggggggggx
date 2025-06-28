@@ -10,45 +10,13 @@ local UnitSlots = LocalPlayer.PlayerGui.Main.UnitsFrame.UnitsSlot
 local PlaceRemote = ReplicatedStorage:WaitForChild("PlayMode"):WaitForChild("Events"):WaitForChild("spawnunit")
 local ManageUnits = ReplicatedStorage:WaitForChild("PlayMode"):WaitForChild("Events"):WaitForChild("ManageUnits")
 
-local macro = { Data = { Actions = {}, Map = Workspace.GameSettings.Stages.Value or "Unknown" } }
-local currentStep = 1
-local uniqueIDCounter = 0
+local Macro = {}
+local currentId = 1
 local isRecording = false
 local isPlaying = false
 local FILE_NAME = "macro_record.json"
 
-Workspace.Ground.unitClient.ChildAdded:Connect(function(unit)
-	if not unit:IsA("Model") then return end
-	if unit:GetAttribute("UniqueID") then return end
-	if unit:GetAttribute("Owner") ~= LocalPlayer.Name then return end
-	uniqueIDCounter += 1
-	unit:SetAttribute("UniqueID", uniqueIDCounter)
-end)
-
-function StartRecording()
-	macro.Data = { Actions = {}, Map = Workspace.GameSettings.Stages.Value or "Unknown" }
-	currentStep = 1
-	uniqueIDCounter = 0
-	isRecording = true
-end
-
-function StopRecording()
-	isRecording = false
-	pcall(function()
-		writefile(FILE_NAME, HttpService:JSONEncode(macro))
-	end)
-end
-
-function findUnitByID(id)
-	for _, u in ipairs(Workspace.Ground.unitClient:GetChildren()) do
-		if u:GetAttribute("UniqueID") == id then
-			return u
-		end
-	end
-	return nil
-end
-
-function GetUnitCost(unitName)
+local function GetUnitCost(unitName)
 	for _, desc in pairs(UnitSlots:GetDescendants()) do
 		if desc:IsA("Frame") and desc.Name:lower() == unitName:lower() then
 			local yenLabel = desc:FindFirstChild("yen")
@@ -63,7 +31,72 @@ function GetUnitCost(unitName)
 	return 0
 end
 
-print(GetUnitCost("Subaro"))
+local function recordAction(actionType, unitName, cf, spent)
+	local actionData = {
+		type = actionType,
+		unit = unitName,
+		money = spent or GetUnitCost(unitName)
+	}
+	if cf then
+		local components = { cf:GetComponents() }
+		actionData.cframe = table.concat(components, ", ")
+	end
+	Macro[tostring(currentId)] = actionData
+	currentId += 1
+end
+
+function StartRecording()
+	Macro = {}
+	currentId = 1
+	isRecording = true
+end
+
+function StopRecording()
+	isRecording = false
+	pcall(function()
+		writefile(FILE_NAME, HttpService:JSONEncode(Macro))
+	end)
+end
+
+function parseCFrame(str)
+	local parts = {}
+	for num in string.gmatch(str, "-?%d+%.?%d*") do
+		table.insert(parts, tonumber(num))
+	end
+	if #parts == 12 then
+		return CFrame.new(unpack(parts))
+	end
+	return nil
+end
+
+function PlayMacro(file)
+	if isPlaying then return end
+	if not isfile(file) then return end
+	isPlaying = true
+	local success, result = pcall(function()
+		local raw = readfile(file)
+		if not raw or raw == "" then return end
+		local data = HttpService:JSONDecode(raw)
+		for i = 1, math.huge do
+			local action = data[tostring(i)]
+			if not action then break end
+			repeat task.wait(0.2) until Yen.Value >= (action.money or 0)
+			if action.type == "SpawnUnit" and action.cframe then
+				local cf = parseCFrame(action.cframe)
+				local uuid = GetUnitUUID(action.unit)
+				if uuid and cf then
+					PlaceRemote:InvokeServer({ action.unit, cf, 0 }, uuid)
+				end
+			elseif action.type == "Selling" or action.type == "Upgrade" then
+				local unit = Workspace.Ground.unitClient:FindFirstChild(action.unit)
+				if unit then
+					ManageUnits:InvokeServer(action.type, unit.Name)
+				end
+			end
+		end
+	end)
+	isPlaying = false
+end
 
 function GetUnitUUID(unitName)
 	for _, desc in pairs(UnitSlots:GetDescendants()) do
@@ -74,84 +107,18 @@ function GetUnitUUID(unitName)
 	return nil
 end
 
-function PlayMacro(file)
-	if isPlaying then return end
-	if not isfile(file) then return end
-	isPlaying = true
-	uniqueIDCounter = 0
-	local success, result = pcall(function()
-		local raw = readfile(file)
-		if not raw or raw == "" then return end
-		local data = HttpService:JSONDecode(raw)
-		if type(data) ~= "table" or type(data.Data) ~= "table" or type(data.Data.Actions) ~= "table" then return end
-		table.sort(data.Data.Actions, function(a, b)
-			return a.Step < b.Step
-		end)
-		for _, action in ipairs(data.Data.Actions) do
-			repeat task.wait(0.2) until Yen.Value >= (action.Cost or 0)
-			if action.Action == "Place" then
-				local cf = CFrame.new(action.CFrame.X, action.CFrame.Y, action.CFrame.Z)
-				local uuid = GetUnitUUID(action.Unit)
-				if uuid then
-					PlaceRemote:InvokeServer({ action.Unit, cf, action.Cost or 0 }, uuid)
-				end
-			elseif action.Action == "Sell" then
-				local unit = findUnitByID(action.UniqueID)
-				if unit then
-					ManageUnits:InvokeServer("Selling", unit.Name)
-				end
-			end
-		end
-	end)
-	isPlaying = false
-end 
-
 local oldNamecall
 oldNamecall = hookmetamethod(game, "__namecall", newcclosure(function(self, ...)
 	local args = { ... }
 	local method = getnamecallmethod()
-
 	if not checkcaller() and isRecording then
-		-- Record unit placement
 		if tostring(self) == "spawnunit" and method == "InvokeServer" then
-			local unitName = args[1]
-			local cf = args[2]
-			local beforeCash = Yen.Value
-
+			local unitName = args[1][1]
+			local cf = args[1][2]
 			task.delay(0.3, function()
-				local afterCash = Yen.Value
-				local spent = beforeCash - afterCash
-
-				table.insert(macro.Data.Actions, {
-					Step = currentStep,
-					Unit = unitName,
-					CFrame = { X = cf.X, Y = cf.Y, Z = cf.Z },
-					Action = "Place",
-					Cost = spent >= 0 and spent or 0
-				})
-				currentStep += 1
+				recordAction("SpawnUnit", unitName, cf, nil)
 			end)
-
-		-- Record Upgrade / Sell
-		elseif tostring(self) == "ManageUnits" and method == "InvokeServer" then
-			local actionType, unitName = args[1], args[2]
-			if actionType == "Upgrade" or actionType == "Selling" then
-				local unit = Workspace.Ground.unitClient:FindFirstChild(unitName)
-				local id = unit and unit:GetAttribute("UniqueID")
-				if id then
-					table.insert(macro.Data.Actions, {
-						Step = currentStep,
-						Unit = unitName,
-						UniqueID = id,
-						Action = actionType == "Selling" and "Sell" or actionType,
-						Cost = 0
-					})
-					currentStep += 1
-				end
-			end
-		end
 	end
-
 	return oldNamecall(self, unpack(args))
 end))
 
