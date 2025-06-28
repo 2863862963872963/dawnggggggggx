@@ -108,31 +108,52 @@ end
 
 local oldNamecall
 oldNamecall = hookmetamethod(game, "__namecall", newcclosure(function(self, ...)
-    local args = { ... }
-    local method = getnamecallmethod()
+	local args = { ... }
+	local method = getnamecallmethod()
 
-    if not checkcaller() and isRecording then
-        if tostring(self) == "spawnunit" and method == "InvokeServer" then
-            if type(args[1]) == "table" and args[1][1] and args[1][2] then
-                local unitName = args[1][1]
-                local cf = args[1][2]
-                local cost = GetUnitCost(unitName) or 0
+	if not checkcaller() and isRecording then
+		-- Record unit placement
+		if tostring(self) == "spawnunit" and method == "InvokeServer" then
+			local unitName = args[1]
+			local cf = args[2]
+			local beforeCash = Yen.Value
 
-                table.insert(macro.Data.Actions, {
-                    Step = currentStep,
-                    Unit = unitName,
-                    CFrame = { X = cf.X, Y = cf.Y, Z = cf.Z },
-                    Action = "Place",
-                    Cost = cost
-                })
-                currentStep += 1
-            end
-        end
-    end
+			task.delay(0.3, function()
+				local afterCash = Yen.Value
+				local spent = beforeCash - afterCash
 
-    return oldNamecall(self, unpack(args)) -- ✅ luôn trả đúng args gốc
+				table.insert(macro.Data.Actions, {
+					Step = currentStep,
+					Unit = unitName,
+					CFrame = { X = cf.X, Y = cf.Y, Z = cf.Z },
+					Action = "Place",
+					Cost = spent >= 0 and spent or 0
+				})
+				currentStep += 1
+			end)
+
+		-- Record Upgrade / Sell
+		elseif tostring(self) == "ManageUnits" and method == "InvokeServer" then
+			local actionType, unitName = args[1], args[2]
+			if actionType == "Upgrade" or actionType == "Selling" then
+				local unit = Workspace.Ground.unitClient:FindFirstChild(unitName)
+				local id = unit and unit:GetAttribute("UniqueID")
+				if id then
+					table.insert(macro.Data.Actions, {
+						Step = currentStep,
+						Unit = unitName,
+						UniqueID = id,
+						Action = actionType == "Selling" and "Sell" or actionType,
+						Cost = 0
+					})
+					currentStep += 1
+				end
+			end
+		end
+	end
+
+	return oldNamecall(self, unpack(args))
 end))
-
 
 StartRecording()
 task.wait(20)
