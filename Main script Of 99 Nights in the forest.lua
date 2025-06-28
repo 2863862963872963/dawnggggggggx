@@ -188,7 +188,7 @@ oldNamecall = hookmetamethod(game, "__namecall", newcclosure(function(self, ...)
 					Unit = args[1][1],
 					CFrame = { X = args[1][2].X, Y = args[1][2].Y, Z = args[1][2].Z },
 					Action = "Place",
-					Cost = GetUnitCost(args[1][1]) or 0
+					-- Cost = GetUnitCost(args[1][1]) or 0
 				})
 				currentStep += 1
 			else
