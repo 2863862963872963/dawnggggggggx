@@ -104,50 +104,35 @@ function PlayMacro(file)
 		end
 	end)
 	isPlaying = false
-end
+end 
 
 local oldNamecall
 oldNamecall = hookmetamethod(game, "__namecall", newcclosure(function(self, ...)
-	local args = { ... }
-	local method = getnamecallmethod()
-	if not checkcaller() and isRecording then
-		if tostring(self) == "spawnunit" and method == "InvokeServer" then
-			if type(args[1]) == "table" and args[1][1] and args[1][2] then
-				local unitName = args[1][1]
-				local unitCost = GetUnitCost(tostring(unitName))
-				table.insert(macro.Data.Actions, {
-					Step = currentStep,
-					Unit = unitName,
-					CFrame = {
-						X = args[1][2].X,
-						Y = args[1][2].Y,
-						Z = args[1][2].Z,
-					},
-					Action = "Place",
-					Cost = unitCost or 0
-				})
-				currentStep += 1
-			end
-		elseif tostring(self) == "ManageUnits" and method == "InvokeServer" then
-			local actionType, unitName = args[1], args[2]
-			if actionType == "Upgrade" or actionType == "Selling" then
-				local unit = Workspace.Ground.unitClient:FindFirstChild(unitName)
-				local id = unit and unit:GetAttribute("UniqueID")
-				if id then
-					table.insert(macro.Data.Actions, {
-						Step = currentStep,
-						Unit = unitName,
-						UniqueID = id,
-						Action = actionType == "Selling" and "Sell" or actionType,
-						Cost = 0
-					})
-					currentStep += 1
-				end
-			end
-		end
-	end
-	return oldNamecall(self, unpack(args))
+    local args = { ... }
+    local method = getnamecallmethod()
+
+    if not checkcaller() and isRecording then
+        if tostring(self) == "spawnunit" and method == "InvokeServer" then
+            if type(args[1]) == "table" and args[1][1] and args[1][2] then
+                local unitName = args[1][1]
+                local cf = args[1][2]
+                local cost = GetUnitCost(unitName) or 0
+
+                table.insert(macro.Data.Actions, {
+                    Step = currentStep,
+                    Unit = unitName,
+                    CFrame = { X = cf.X, Y = cf.Y, Z = cf.Z },
+                    Action = "Place",
+                    Cost = cost
+                })
+                currentStep += 1
+            end
+        end
+    end
+
+    return oldNamecall(self, unpack(args)) -- ✅ luôn trả đúng args gốc
 end))
+
 
 StartRecording()
 task.wait(20)
