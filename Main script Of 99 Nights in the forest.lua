@@ -63,6 +63,8 @@ function GetUnitCost(unitName)
 	return 0
 end
 
+print(GetUnitCost("Subaro"))
+
 function GetUnitUUID(unitName)
 	for _, desc in pairs(UnitSlots:GetDescendants()) do
 		if desc:IsA("StringValue") and desc.Name == unitName then
@@ -112,7 +114,7 @@ oldNamecall = hookmetamethod(game, "__namecall", newcclosure(function(self, ...)
 		if tostring(self) == "spawnunit" and method == "InvokeServer" then
 			if type(args[1]) == "table" and args[1][1] and args[1][2] then
 				local unitName = args[1][1]
-				local unitCost = GetUnitCost(unitName)
+				local unitCost = GetUnitCost(tostring(unitName))
 				table.insert(macro.Data.Actions, {
 					Step = currentStep,
 					Unit = unitName,
