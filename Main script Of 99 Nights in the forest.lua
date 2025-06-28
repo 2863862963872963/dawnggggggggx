@@ -217,7 +217,7 @@ oldNamecall = hookmetamethod(game, "__namecall", newcclosure(function(self, ...)
 	return oldNamecall(self, unpack(args))
 end))
 
-print("✅ Macro system ready. Use StartRecording(), StopRecording(), PlayMacro('macro_record.json')")
+print("✅ Macro system ready. Use StartRecording(), StopRecording(), PlayMacro('macro_record.json')  2")
 
 -- Test
 StartRecording()
