@@ -35,12 +35,9 @@ local function recordAction(actionType, unitName, cf, spent)
 	local actionData = {
 		type = actionType,
 		unit = unitName,
+		cframe = cf,
 		money = spent or GetUnitCost(unitName)
 	}
-	if cf then
-		local components = { cf:GetComponents() }
-		actionData.cframe = table.concat(components, ", ")
-	end
 	Macro[tostring(currentId)] = actionData
 	currentId += 1
 end
@@ -56,17 +53,6 @@ function StopRecording()
 	pcall(function()
 		writefile(FILE_NAME, HttpService:JSONEncode(Macro))
 	end)
-end
-
-function parseCFrame(str)
-	local parts = {}
-	for num in string.gmatch(str, "-?%d+%.?%d*") do
-		table.insert(parts, tonumber(num))
-	end
-	if #parts == 12 then
-		return CFrame.new(unpack(parts))
-	end
-	return nil
 end
 
 function PlayMacro(file)
