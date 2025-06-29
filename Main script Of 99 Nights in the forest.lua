@@ -79,13 +79,13 @@ local function AcceptQuest(QuestN)
 		   if v:IsA("Model") and v.Name == Quest then
 				local hrp = v:FindFirstChild("HumanoidRootPart")
 				QuestPos = hrp.CFrame * CFrame.new(0, 0, -5)
-			        Class:tween(QuestPos)
+				Class:tween(QuestPos)
 				task.wait(0.5)
 				Class:Click()
 				if not QuestUi.ButtonFrame:FindFirstChild("Yes") then
 					Class:Click()
 				elseif QuestUi.ButtonFrame:FindFirstChild("Yes") then
-					firesignal(QuestUi.ButtonFrame:FindFirstChild("Yes").MouseButton1Click)
+					firesignal(QuestUi.ButtonFrame.Yes.MouseButton1Click)
 				end
 			end
 		end
@@ -96,11 +96,40 @@ local function M1()
 	Remote.BridgeNet2:FireServer({{ "M1", CFrame.new(0, 0, 0), CFrame.new(0, 0, 0) }, "\4"})
 end
 
+local function FindEnemy()
+	local targetName = GetEnemyQuest()
+	for _, mob in pairs(workspace.Live:GetChildren()) do
+		if mob.Name == targetName and mob:FindFirstChild("HumanoidRootPart") and mob:FindFirstChild("Humanoid") and mob.Humanoid.Health > 0 then
+			return mob
+		end
+	end
+	return nil
+end
+
 function AutoFarmLevel()
 	local Quest = GetQuest()
-	local Enemy = GetEnemyQuest()
 	AcceptQuest(Quest)
+
+	local enemy = FindEnemy()
+	if enemy then
+		tp(enemy.HumanoidRootPart.CFrame * CFrame.new(0, 0, 5))
+		repeat
+			if enemy and enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 then
+				M1()
+			end
+			task.wait(0.3)
+		until not enemy or not enemy:FindFirstChild("Humanoid") or enemy.Humanoid.Health <= 0 or not Config["Farm Config"].AutoFarmLevel
+	end
 end
+
+task.spawn(function()
+	while true do
+		task.wait(1)
+		if Config["Farm Config"].AutoFarmLevel then
+			AutoFarmLevel()
+		end
+	end
+end)
 
 local QuotesTable = {
 	"A ghost of a memory.",
@@ -204,4 +233,3 @@ local ConfigUI = Window:DrawConfig({
 	Config = ConfigManager
 })
 ConfigUI:Init()
-
