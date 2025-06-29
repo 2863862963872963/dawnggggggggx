@@ -329,6 +329,17 @@ function __Class:KeyPress(keycode)
     VirtualInputManager:SendKeyEvent(false, keycode, false, game)
 end
 
+function __Class:Click(x, y, button)
+    local viewport = workspace.CurrentCamera.ViewportSize
+    x = x or viewport.X / 2
+    y = y or viewport.Y / 2
+    button = button or 0
+
+    VirtualInputManager:SendMouseButtonEvent(x, y, button, true, game, 0)
+    task.wait()
+    VirtualInputManager:SendMouseButtonEvent(x, y, button, false, game, 0)
+end
+
 function __Class:GetStats()
 	local fps = math.floor(1 / RunService.RenderStepped:Wait())
 	local ping = math.floor(Stats.Network.ServerStatsItem["Data Ping"]:GetValue())
