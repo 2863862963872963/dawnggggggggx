@@ -78,7 +78,7 @@ local function AcceptQuest(QuestN)
 		for _, v in pairs(workspace.Interact.Quest:GetChildren()) do
 		   if v:IsA("Model") and v.Name == Quest then
 				local hrp = v:FindFirstChild("HumanoidRootPart")
-			        tp(hrp.CFrame)
+			        Class:tween(hrp.CFrame)
 				task.wait(0.5)
 				Class:Click()
 			end
