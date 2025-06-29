@@ -123,6 +123,20 @@ function __Class:Equip(Tool: Tool)
 	end;
 end;
 
+function _Class:GetBackpack()
+    local Backpack = Player:FindFirstChild("Backpack")
+    if not Backpack then return {} end
+
+    local items = {}
+    for _, item in ipairs(Backpack:GetChildren()) do
+        if item:IsA("Tool") then
+            table.insert(items, item.Name)
+        end;
+    end;
+
+    return items;
+end;
+
 translate = function(en: string, th: string)
 	if _G.Thai or getgenv().Thai or _G.Thailand then
 		return tostring(th);
