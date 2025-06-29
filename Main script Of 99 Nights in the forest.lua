@@ -100,14 +100,14 @@ function M1()
  end
 end
 
---[[
+
 function AutoFarmLevel()
  local Quest = GetQuest()
  AcceptQuest(Quest)
  local isQuesting = Player.Quests:FindFirstChild(Quest)
- local Enemy = GetEnemyQuest()
-
- if isQuesting then
+ 
+ if Quest and isQuesting then
+  local Enemy = GetEnemyQuest()
   for _, v in pairs(workspace.Monster:GetDescendants()) do
    if v.Name == Enemy and v:FindFirstChild("HumanoidRootPart") and v:FindFirstChild("Humanoid") and v.Humanoid.Health > 0 then
     local hrp = v.HumanoidRootPart.CFrame * CFrame.new(0, 0, 4)
@@ -124,7 +124,7 @@ local FuncHandle = RunService.Heartbeat:Connect(function()
   AutoFarmLevel()
  end
 end)
---]]
+
 local QuotesTable = {
  "A ghost of a memory.",
  "When the past whispers through the present.",
