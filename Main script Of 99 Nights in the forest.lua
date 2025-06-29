@@ -51,6 +51,13 @@ local function GetQuest()
 	return Quest
 end
 
+function tp(cf)
+	local hrp = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
+	if hrp and cf then
+		hrp.CFrame = cf
+	end
+end
+
 local function GetEnemyQuest()
 	local QuestN = GetQuest()
 	local Quests = Player.Quests
@@ -72,7 +79,7 @@ local function AcceptQuest(QuestN)
 		for _, v in pairs(workspace.Interact.Quest:GetChildren()) do
 		   if v:IsA("Model") and v.Name == Quest then
 				local hrp = v:FindFirstChild("HumanoidRootPart")
-			    Class:tp(hrp.CFrame)
+			        tp(hrp.CFrame)
 			end
 		end
 	end
