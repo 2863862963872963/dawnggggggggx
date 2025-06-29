@@ -71,7 +71,6 @@ local function GetEnemyQuest()
 end
 
 local function AcceptQuest(QuestN)
-	local Click = Class:Click()
 	local isQuesting = Player.Quests:FindFirstChild(QuestN)
 	local Quest = string.gsub(QuestN, " ", "")
 
@@ -80,6 +79,8 @@ local function AcceptQuest(QuestN)
 		   if v:IsA("Model") and v.Name == Quest then
 				local hrp = v:FindFirstChild("HumanoidRootPart")
 			        tp(hrp.CFrame)
+				task.wait(0.5)
+				Class:Click()
 			end
 		end
 	end
