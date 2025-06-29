@@ -100,6 +100,7 @@ function M1()
  end
 end
 
+--[[
 function AutoFarmLevel()
  local Quest = GetQuest()
  AcceptQuest(Quest)
@@ -123,7 +124,7 @@ local FuncHandle = RunService.Heartbeat:Connect(function()
   AutoFarmLevel()
  end
 end)
-
+--]]
 local QuotesTable = {
  "A ghost of a memory.",
  "When the past whispers through the present.",
@@ -194,7 +195,7 @@ FarmLevelOption:AddToggle({
 FarmLevelOption:AddToggle({
  Name = "Safe Farm",
  Callback = function(State)
-  -- Placeholder for Safe Farm logic
+
  end
 })
 
