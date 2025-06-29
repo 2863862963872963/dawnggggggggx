@@ -73,7 +73,7 @@ end
 local function AcceptQuest(QuestN)
 	local isQuesting = Player.Quests:FindFirstChild(QuestN)
 	local Quest = string.gsub(QuestN, " ", "")
-
+	local QuestUi = Player.PlayerGui:WaitForChild("InteractUI"):WaitForChild("Main")
 	if not isQuesting then
 		for _, v in pairs(workspace.Interact.Quest:GetChildren()) do
 		   if v:IsA("Model") and v.Name == Quest then
@@ -82,6 +82,11 @@ local function AcceptQuest(QuestN)
 			        Class:tween(QuestPos)
 				task.wait(0.5)
 				Class:Click()
+				if not QuestUi.ButtonFrame:FindFirstChild("Yes") then
+					Class:Click()
+				elseif QuestUi.ButtonFrame:FindFirstChild("Yes") then
+					firesignal(QuestUi.ButtonFrame:FindFirstChild("Yes").MouseButton1Click)
+				end
 			end
 		end
 	end
