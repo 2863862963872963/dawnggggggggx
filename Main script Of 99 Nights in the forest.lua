@@ -85,7 +85,7 @@ local function AcceptQuest(QuestN)
 				if not QuestUi.ButtonFrame:FindFirstChild("Yes") then
 					Class:Click()
 				elseif QuestUi.ButtonFrame:FindFirstChild("Yes") then
-					firesignal(QuestUi.ButtonFrame.Yes.MouseButton1Click)
+					firesignal(QuestUi.ButtonFrame.Yes.Button.MouseButton1Click)
 				end
 			end
 		end
