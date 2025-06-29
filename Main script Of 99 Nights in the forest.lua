@@ -1,4 +1,3 @@
--- Load external modules
 local Compkiller = loadstring(game:HttpGet("https://raw.githubusercontent.com/4lpaca-pin/CompKiller/refs/heads/main/src/source.luau"))()
 local ConfigManager = Compkiller:ConfigManager({Directory = "K4yo Hub", Config = "Example-Configs"})
 local Module = loadstring(game:HttpGet("https://raw.githubusercontent.com/2863862963872963/dawnggggggggx/refs/heads/main/Compiler.inc"))()
@@ -113,7 +112,6 @@ function AutoFarmLevel()
     local hrp = v.HumanoidRootPart.CFrame * CFrame.new(0, 0, 4)
     Class:tween(hrp)
     M1()
-    task.wait(0.5)
    end
   end
  end
