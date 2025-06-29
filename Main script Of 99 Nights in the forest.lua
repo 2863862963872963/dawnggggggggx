@@ -17,7 +17,7 @@ local Config = {
 	["Farm Config"] = {
 		getgenv().AutoFarmLevel = nil,
 		getgenv().BossAllow = nil,
-	},
+	}
 }
 
 	
