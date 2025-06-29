@@ -15,13 +15,11 @@ local Remote = {
 }
 local Config = {
 	["Farm Config"] = {
-		getgenv().AutoFarmLevel = nil,
-		getgenv().BossAllow = nil,
+		AutoFarmLevel = false,
+		BossAllow = false,
 	}
 }
 
-	
-// Quest Detection Logic
 local function GetQuest()
 	local Levels = Player.Data:GetAttribute("Levels")
 	local Quest = nil
@@ -66,33 +64,27 @@ local function GetEnemyQuest()
 end
 
 local function AcceptQuest(QuestN)
-	Click = Class:Click()
-	isQuesting = Player.Quests:FindFirstChild(QuestN)
-    Quest = string.gsub(QuestN, " ", "")
+	local Click = Class:Click()
+	local isQuesting = Player.Quests:FindFirstChild(QuestN)
+	local Quest = string.gsub(QuestN, " ", "")
 
 	if not isQuesting then
-		for i, v in pairs(workspace.Interact.Quest:GetChildren()) do
+		for _, v in pairs(workspace.Interact.Quest:GetChildren()) do
 		   if v:IsA("Model") and v.Name == Quest then
-				hrp = v:FindFirstChild("HumanoidRootPart")
+				local hrp = v:FindFirstChild("HumanoidRootPart")
 			    Class:tp(hrp.CFrame)
 			end
 		end
 	end
 end
-				
-			
-
-
 
 local function M1()
 	Remote.BridgeNet2:FireServer({{ "M1", CFrame.new(0, 0, 0), CFrame.new(0, 0, 0) }, "\4"})
 end
-		
---// Auto Farm Logic (empty for now)
+
 function AutoFarmLevel()
 	local Quest = GetQuest()
 	local Enemy = GetEnemyQuest()
-
 	AcceptQuest(Quest)
 end
 
@@ -107,7 +99,6 @@ local QuotesTable = {
 }
 local Quotes = QuotesTable[math.random(1, #QuotesTable)]
 
---// Main UI Window
 local Window = Compkiller.new({
 	Name = "Aozora Hub",
 	Keybind = "LeftAlt",
@@ -115,7 +106,6 @@ local Window = Compkiller.new({
 	TextSize = 15,
 })
 
---// Watermark Section
 local Watermark = Window:Watermark()
 local Quote = Watermark:AddText({Icon = "pencil", Text = Quotes})
 local Time = Watermark:AddText({Icon = "timer", Text = "TIME"})
@@ -127,7 +117,6 @@ task.spawn(function()
 	end
 end)
 
---// Farm Tabs
 local FarmTabs = Window:DrawContainerTab({
 	Name = "Farm",
 	Icon = "contact",
@@ -155,23 +144,23 @@ local AutoFarmLevelTog = FarmLevelSection:AddToggle({
 	Name = "Auto Farm Level",
 	Default = false,
 	Callback = function(State)
-		Config["Farm Config"].getgenv().AutoFarmLevel = State 
+		Config["Farm Config"].AutoFarmLevel = State 
 	end,
 })
 
 local FarmLevelOption = AutoFarmLevelTog.Link:AddOption()
 FarmLevelOption:AddToggle({
 	Name = "Boss Allow ?",
-	Callback = function(state) 
-		Config["Farm Config"].getgenv().BossAllow = State 
+	Callback = function(State) 
+		Config["Farm Config"].BossAllow = State 
 	end,
 })
 FarmLevelOption:AddToggle({
 	Name = "Safe Farm",
-	Callback = print
+	Callback = function(State)
+	end
 })
 
---// Theme Tab
 local ThemeTab = Window:DrawTab({
 	Icon = "paintbrush",
 	Name = "Themes",
@@ -194,16 +183,10 @@ ThemeTab:DrawSection({
 		Compkiller:SetTheme(v)
 	end,
 })
---// Config Tab
+
 local ConfigUI = Window:DrawConfig({
 	Name = "Config",
 	Icon = "folder",
 	Config = ConfigManager
 })
 ConfigUI:Init()
-
-
-
-
-
-
