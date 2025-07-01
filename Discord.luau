@@ -18,7 +18,7 @@ function WebhookModule:Send(webhookUrl, data)
             {
                 title = data.title or nil,
                 description = data.description or nil,
-                color = tonumber(data.color) or 16777215, -- white by default
+                color = tonumber(data.color) or 16777215, 
                 fields = data.fields or nil,
                 image = data.image and { url = data.image } or nil,
                 thumbnail = data.thumbnail and { url = data.thumbnail } or nil,
