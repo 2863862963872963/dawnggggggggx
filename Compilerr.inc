@@ -83,14 +83,29 @@ function __Class:tp(pos: any, v: func)
 	end)
 end
 
+--function __Class:tween(Position)
+--	if not HumanoidRootPart then return end
+--	local Distance = (Position.Position - HumanoidRootPart.Position).Magnitude
+--	if Distance > 0 and Distance < 300 then
+--		return TweenService:Create(HumanoidRootPart,TweenInfo.new(0.08, Enum.EasingStyle.Linear),{CFrame = Position}):Play()
+--	else
+--		return TweenService:Create(HumanoidRootPart,TweenInfo.new(Distance / 300, Enum.EasingStyle.Linear),{CFrame = Position}):Play()
+--	end
+--end
+
 function __Class:tween(Position)
-	if not HumanoidRootPart then return end
+	if not HumanoidRootPart or not Humanoid then return end
 	local Distance = (Position.Position - HumanoidRootPart.Position).Magnitude
-	if Distance > 0 and Distance < 300 then
-		return TweenService:Create(HumanoidRootPart,TweenInfo.new(0.08, Enum.EasingStyle.Linear),{CFrame = Position}):Play()
-	else
-		return TweenService:Create(HumanoidRootPart,TweenInfo.new(Distance / 300, Enum.EasingStyle.Linear),{CFrame = Position}):Play()
-	end
+	
+	Humanoid:ChangeState(Enum.HumanoidStateType.PlatformStanding)
+
+	local tweenTime = Distance > 0 and Distance < 300 and 0.08 or Distance / 300
+	local Tween = TweenService:Create(HumanoidRootPart, TweenInfo.new(tweenTime, Enum.EasingStyle.Linear), {CFrame = Position})
+	
+	Tween:Play()
+	Tween.Completed:Connect(function()
+		Humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
+	end)
 end
 
 function __Class:PathTo(destination)
