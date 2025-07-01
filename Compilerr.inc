@@ -94,6 +94,31 @@ end
 --end
 
 function __Class:tween(Position)
+	if not HumanoidRootPart then return end
+
+	local Distance = (Position.Position - HumanoidRootPart.Position).Magnitude
+	local tweenTime = Distance > 0 and Distance < 300 and 0.08 or (Distance / 300)
+
+	local bodyPosition = Instance.new("BodyPosition")
+	bodyPosition.Position = Position.Position
+	bodyPosition.MaxForce = Vector3.new(1e5, 1e5, 1e5)
+	bodyPosition.P = 5e4
+	bodyPosition.D = 1e3
+	bodyPosition.Parent = HumanoidRootPart
+
+	local tween = TweenService:Create(
+		HumanoidRootPart,
+		TweenInfo.new(tweenTime, Enum.EasingStyle.Linear),
+		{CFrame = Position}
+	)
+	tween:Play()
+
+	tween.Completed:Connect(function()
+		bodyPosition:Destroy() 
+	end)
+end
+
+function __Class:tween2(Position)
 	if not HumanoidRootPart or not Humanoid then return end
 	local Distance = (Position.Position - HumanoidRootPart.Position).Magnitude
 	
