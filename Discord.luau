@@ -1,7 +1,5 @@
 local WebhookModule = {}
 
-local defaultUsername = "Webhook Bot"
-local defaultAvatar = "https://i.imgur.com/AfFp7pu.png"
 
 function WebhookModule:Send(webhookUrl, data)
     local request = (syn and syn.request) or (http and http.request) or http_request or request
@@ -11,8 +9,8 @@ function WebhookModule:Send(webhookUrl, data)
     end
 
     local payload = {
-        username = data.username or defaultUsername,
-        avatar_url = data.avatar or defaultAvatar,
+        username = data.username,
+        avatar_url = data.avatar,
         content = data.content or nil,
         embeds = {
             {
