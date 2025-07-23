@@ -36,4 +36,3 @@ end
 
 _G.LoopManager = LoopManager 
 
--- chat gpt with love  😛
