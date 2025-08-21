@@ -1,446 +1,145 @@
 islclosure, getgc, hookfunction, getrenv = islclosure, getgc, hookfunction, getrenv
 getgenv, identifyexecutor, setclipboard, makefolder, isfolder = getgenv, identifyexecutor, setclipboard, makefolder, isfolder
 writefile, isfile, readfile, delfile, sethiddenproperty, getnilinstances = writefile, isfile, readfile, delfile, sethiddenproperty, getnilinstances
-cloneref, getconnections, getsenv,fireclickdetector,fireproximityprompt,firetouchinterest = cloneref, getconnections, getsenv,fireclickdetector,fireproximityprompt,firetouchinterest
-----------------------------------------------------
-local Configs: SharedTable = {} or {...};
-local __Class: SharedTable = {} or {...};
-local Funcs: SharedTable = {} or {...};
-local Players: Players = game:GetService("Players");
-local VirtualInputManager: VirtualInputManager = game:GetService("VirtualInputManager");
-local CollectionService: CollectionService = game:GetService("CollectionService");
-local ReplicatedStorage: ReplicatedStorage = game:GetService("ReplicatedStorage");
-local TeleportService: TeleportService = game:GetService("TeleportService");
-local RunService: RunService = game:GetService("RunService");
-local VirtualUser: VirtualUser = game:GetService("VirtualUser");
-local HttpService: HttpService = game:GetService("HttpService");
-local TweenService: TweenService = game:GetService("TweenService");
-local CoreGui: any? = game:GetService("CoreGui");
-local PlaceId: number = game.PlaceId;
-local JobId: number? | string? | any? = game.JobId;
-local Camera: Instance = workspace.CurrentCamera;
-local Tick: TimerService | number = tick();
-local LocalPlayer: Client | any? = Players.LocalPlayer;
-local Backpack: Backpack = LocalPlayer.Backpack;
-local PlayerGui: PlayerGui = LocalPlayer.PlayerGui;
-local PlayerScript: PlayerScripts =  LocalPlayer.PlayerScripts;
-local Name: string = LocalPlayer.Name;
-local DisplayName: string = LocalPlayer.DisplayName;
-local PlayerId: number = LocalPlayer.UserId;
-local Team: string = tostring(LocalPlayer.Team);
-local Folder: string = "Fetching'Script/Config/" .. PlayerId .. "/" .. PlaceId .. ".json";
-local Character: Instance = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait();
-local HumanoidRootPart: Instance | Part = Character:WaitForChild("HumanoidRootPart");
-local Humanoid: Instance | Humanoid = Character:WaitForChild("Humanoid");
-local RenderStepped: any? = RunService.RenderStepped;
-local Heartbeat: any? = RunService.Heartbeat;
-local Stepped: any? = RunService.Stepped;
-local Executor: string = string.upper(identifyexecutor());
-local Blacklist_Executor: boolean = table.find({"SOLARA", "XENO"}, Executor);
+cloneref, getconnections, getsenv, fireclickdetector, fireproximityprompt, firetouchinterest =
+cloneref, getconnections, getsenv, fireclickdetector, fireproximityprompt, firetouchinterest
 
+--// Services
+local Players = game:GetService("Players")
+local VirtualInputManager = game:GetService("VirtualInputManager")
+local CollectionService = game:GetService("CollectionService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local TeleportService = game:GetService("TeleportService")
+local RunService = game:GetService("RunService")
+local VirtualUser = game:GetService("VirtualUser")
+local HttpService = game:GetService("HttpService")
+local TweenService = game:GetService("TweenService")
+local CoreGui = game:GetService("CoreGui")
+
+--// Locals
+local PlaceId = game.PlaceId
+local JobId = game.JobId
+local Camera = workspace.CurrentCamera
+local LocalPlayer = Players.LocalPlayer
+local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+local HumanoidRootPart = Character:WaitForChild("HumanoidRootPart")
+local Humanoid = Character:WaitForChild("Humanoid")
+local Backpack = LocalPlayer:WaitForChild("Backpack")
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+local PlayerScripts = LocalPlayer:WaitForChild("PlayerScripts")
+local Name = LocalPlayer.Name
+local DisplayName = LocalPlayer.DisplayName
+local PlayerId = LocalPlayer.UserId
+local Team = tostring(LocalPlayer.Team)
+local Folder = "AscentLib/Config/" .. PlayerId .. "/" .. PlaceId .. ".json"
+local Executor = string.upper(identifyexecutor())
+local Blacklist_Executor = table.find({"SOLARA", "XENO"}, Executor)
+
+-- Auto-update character references
 LocalPlayer.CharacterAdded:Connect(function(newCharacter)
-	Character = newCharacter;
-	Humanoid = Character:WaitForChild('Humanoid');
-	HumanoidRootPart = Character:WaitForChild('HumanoidRootPart');
-	Backpack = LocalPlayer:WaitForChild("Backpack");
-end);
+    Character = newCharacter
+    Humanoid = Character:WaitForChild("Humanoid")
+    HumanoidRootPart = Character:WaitForChild("HumanoidRootPart")
+    Backpack = LocalPlayer:WaitForChild("Backpack")
+end)
 
+-- Anti-AFK
 task.spawn(function()
-	pcall(function()
-		if getconnections then
-			for _,v in pairs(getconnections(LocalPlayer.Idled)) do
-				if v["Disable"] then
-					v["Disable"](v);
-				elseif v["Disconnect"] then
-					v["Disconnect"](v);
-				end;
-			end;
-		else
-			LocalPlayer.Idled:Connect(function()
-				VirtualUser:CaptureController();
-				VirtualUser:ClickButton2(Vector2.new());
-			end);
-		end;
-	end);
-end);
+    pcall(function()
+        if getconnections then
+            for _, v in pairs(getconnections(LocalPlayer.Idled)) do
+                if v.Disable then v.Disable(v)
+                elseif v.Disconnect then v.Disconnect(v) end
+            end
+        else
+            LocalPlayer.Idled:Connect(function()
+                VirtualUser:CaptureController()
+                VirtualUser:ClickButton2(Vector2.new())
+            end)
+        end
+    end)
+end)
 
-function __Class:Render()
-	return Heartbeat:Wait();
-end;
+--// Library
+local Lib = {}
+Lib.Functions = {}
 
-function __Class:tp(pos: any, v: func)
-	if not HumanoidRootPart then return end
-	pcall(function()
-		if typeof(pos) == "CFrame" then
-			HumanoidRootPart.CFrame = v and (pos * CFrame.Angles(math.rad(-90), 0, 0)) or pos
-		elseif typeof(pos) == "Vector3" then
-			HumanoidRootPart.CFrame = v and (CFrame.new(pos) * CFrame.Angles(math.rad(-90), 0, 0)) or CFrame.new(pos)
-		elseif typeof(pos) == "Instance" and pos:IsA("Model") then
-			HumanoidRootPart.CFrame = v and (pos:GetPivot() * CFrame.Angles(math.rad(-90), 0, 0)) or pos:GetPivot()
-		elseif typeof(pos) == "Instance" and pos:IsA("BasePart") then
-			HumanoidRootPart.CFrame = v and (pos.CFrame * CFrame.Angles(math.rad(-90), 0, 0)) or pos.CFrame
-		end
-	end)
+-- Debug Hello
+function Lib.Functions:Hello()
+    print("Hello from AscentLib!")
 end
 
---function __Class:tween(Position)
---	if not HumanoidRootPart then return end
---	local Distance = (Position.Position - HumanoidRootPart.Position).Magnitude
---	if Distance > 0 and Distance < 300 then
---		return TweenService:Create(HumanoidRootPart,TweenInfo.new(0.08, Enum.EasingStyle.Linear),{CFrame = Position}):Play()
---	else
---		return TweenService:Create(HumanoidRootPart,TweenInfo.new(Distance / 300, Enum.EasingStyle.Linear),{CFrame = Position}):Play()
---	end
---end
+-- Find Part/Model by config
+-- Config = {Path = Instance, Name = "string", Pos = Vector3/Instance, Dis = number, Exact = bool}
+function Lib.Functions:Get(config)
+    local path = config.Path or workspace
+    local name = config.Name
+    local pos = config.Pos
+    local dis = config.Dis or math.huge
+    local exact = config.Exact or false
 
-function __Class:tween(Position)
-	if not HumanoidRootPart then return end
+    if typeof(pos) == "Instance" then
+        pos = pos.Position
+    end
 
-	local Distance = (Position.Position - HumanoidRootPart.Position).Magnitude
-	local tweenTime = Distance > 0 and Distance < 300 and 0.08 or (Distance / 300)
+    local best, bestDist
 
-	local bodyPosition = Instance.new("BodyPosition")
-	bodyPosition.Position = Position.Position
-	bodyPosition.MaxForce = Vector3.new(1e5, 1e5, 1e5)
-	bodyPosition.P = 5e4
-	bodyPosition.D = 1e3
-	bodyPosition.Parent = HumanoidRootPart
+    for _, inst in ipairs(path:GetDescendants()) do
+        if inst:IsA("BasePart") then
+            local match = false
+            if not name then
+                match = true
+            elseif exact then
+                match = inst.Name == name
+            else
+                match = inst.Name:sub(1, #name) == name
+            end
 
-	local tween = TweenService:Create(
-		HumanoidRootPart,
-		TweenInfo.new(tweenTime, Enum.EasingStyle.Linear),
-		{CFrame = Position}
-	)
-	tween:Play()
+            if match then
+                local dist = pos and (inst.Position - pos).Magnitude or 0
+                if dist <= dis and (not bestDist or dist < bestDist) then
+                    best = inst
+                    bestDist = dist
+                end
+            end
+        end
+    end
 
-	tween.Completed:Connect(function()
-		bodyPosition:Destroy() 
-	end)
+    return best or false
 end
 
-function __Class:tween2(Position)
-	if not HumanoidRootPart or not Humanoid then return end
-	local Distance = (Position.Position - HumanoidRootPart.Position).Magnitude
-	
-	Humanoid:ChangeState(Enum.HumanoidStateType.PlatformStanding)
-
-	local tweenTime = Distance > 0 and Distance < 300 and 0.08 or Distance / 300
-	local Tween = TweenService:Create(HumanoidRootPart, TweenInfo.new(tweenTime, Enum.EasingStyle.Linear), {CFrame = Position})
-	
-	Tween:Play()
-	Tween.Completed:Connect(function()
-		Humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
-	end)
+-- Tween to a position
+function Lib.Functions:Tween(part, goalCFrame, speed)
+    local tweenInfo = TweenInfo.new(speed or 1, Enum.EasingStyle.Linear)
+    local tween = TweenService:Create(part, tweenInfo, {CFrame = goalCFrame})
+    tween:Play()
+    return tween
 end
 
-function __Class:PathTo(destination)
-	local PathfindingService = game:GetService("PathfindingService")
-	local path = PathfindingService:CreatePath()
-	path:ComputeAsync(HumanoidRootPart.Position, destination.Position)
-	if path.Status == Enum.PathStatus.Complete then
-		for _, waypoint in ipairs(path:GetWaypoints()) do
-			Humanoid:MoveTo(waypoint.Position)
-			Humanoid.MoveToFinished:Wait()
-		end
-	end
+-- Get HumanoidRootPart of player safely
+function Lib.Functions:GetHRP(plr)
+    plr = plr or LocalPlayer
+    if plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+        return plr.Character.HumanoidRootPart
+    end
+    return nil
 end
 
-function __Class:rotate(v: Vector3)
-	if HumanoidRootPart then
-		pcall(function()
-			HumanoidRootPart.Rotation = v;
-		end);
-	end;
+-- Get closest player
+function Lib.Functions:GetClosestPlayer(maxDistance)
+    local closest, dist = nil, maxDistance or math.huge
+    local myHRP = self:GetHRP(LocalPlayer)
+    if not myHRP then return nil end
+
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if plr ~= LocalPlayer and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+            local d = (plr.Character.HumanoidRootPart.Position - myHRP.Position).Magnitude
+            if d < dist then
+                closest, dist = plr, d
+            end
+        end
+    end
+    return closest
 end
 
-function __Class:Equip(Tool: Tool)
-	if Character then
-		if Backpack:FindFirstChild(Tool) and not Character:FindFirstChild(Tool) then
-			Humanoid:EquipTool(Backpack:FindFirstChild(Tool));
-		else
-			return;
-		end;
-	end;
-end;
-
-translate = function(en: string, th: string)
-	if _G.Thai or getgenv().Thai or _G.Thailand then
-		return tostring(th);
-	else
-		return tostring(en);
-	end;
-end;
-
-function __Class:IsAlive(v: Model | Instance | any)
-	return typeof(v) == "Instance"and v:IsA("Model")and v:FindFirstChild("Humanoid") and v:FindFirstChild("Humanoid").Health > 0;
-end;
-
-function __Class:CloseFunction(a: func)
-	if Blacklist_Executor then return end
-	return hookfunction(a, function() return end)
-end
-
-function __Class:Distance(v: any)
-	if HumanoidRootPart then
-		if typeof(v) == "Instance" and v:IsA("Model") then
-			return (v:GetPivot().Position - HumanoidRootPart.Position).Magnitude;
-		elseif typeof(v) == "Instance" and v:IsA("BasePart") then
-			return (v.Position - HumanoidRootPart.Position).Magnitude;
-		elseif typeof(v) == "CFrame" then
-			return (v.Position - HumanoidRootPart.Position).Magnitude;
-		elseif typeof(v) == "Vector3" then
-			return (v - HumanoidRootPart.Position).Magnitude;
-		else
-			return warn("Not Valid Argument");
-		end;
-	end;
-	return nil;
-end;
-
-function __Class:Check(config, _table)
-	for _,v in pairs(_table) do
-		if config[v] == true then
-			return true ;
-		end ;
-	end ;
-	return false;
-end;
-
-function __Class:GetCloset(v: Folder | any?)
-	local closest, dist, hp = nil, math.huge, math.huge;
-	for _, mob in ipairs(v:GetChildren()) do
-		if mob:IsA("Model") and __Class:IsAlive(mob) then
-			local d = __Class:Distance(mob);
-			local h = mob:FindFirstChild("Humanoid").Health;
-			if d < dist or (d == dist and h < hp) then
-				dist, hp, closest = d, h, mob;
-			end;
-		end;
-	end;
-	return closest;
-end;
-
-function __Class:GetClosetPlayers()
-	local closest, dist, hp = nil, math.huge, math.huge;
-	for _, player in ipairs(Players:GetPlayers()) do
-		if player ~= LocalPlayer and player.Character and __Class:IsAlive(player.Character) then
-			local d = __Class:Distance(player.Character);
-			local h = player.Character:FindFirstChild("Humanoid").Health;
-			if d < dist or (d == dist and h < hp) then
-				dist, hp, closest = d, h, player;
-			end;
-		end;
-	end;
-	return closest;
-end;
-
-function __Class:Save(key: string, value: boolean | string | number | table | any)
-	if key ~= nil then Configs[key] = value;end;
-	if not isfolder("Fetching'Script") then makefolder("Fetching'Script");end;
-	writefile(Folder, HttpService:JSONEncode(Configs));
-end;
-
-Load = function()
-	local base = "Fetching'Script/Config/" .. PlayerId;
-	local path = base .. "/" .. PlaceId .. ".json";
-	if not isfolder("Fetching'Script") then makefolder("Fetching'Script") end;
-	if not isfolder("Fetching'Script/Config") then makefolder("Fetching'Script/Config") end;
-	if not isfolder(base) then makefolder(base) end;
-	if not isfile(path) then __Class:Save() end;
-	return HttpService:JSONDecode(readfile(path));
-end;
-
-Default = function(v: string, a: boolean | string | number | table | any)
-	if type(v) == "table" then
-		for i, k in pairs(v) do
-			if Configs[i] == nil then
-				Configs[i] = k;
-			end;
-		end;
-	else
-		if Configs[v] == nil then
-			Configs[v] = a;
-		end;
-	end;
-end;
-
-function __Class:Loop(Value, func, customFunc)
-	while Value do
-		local startTick = tick();
-		if func then pcall(func);end;
-		if customFunc and customFunc() then break;end;
-		repeat __Class:Render();
-		until tick() - startTick >= (.1)
-	end;
-end;
-
-function __Class:Again(c: func)
-	task.spawn(function()
-		while task.wait(0.1) do
-			pcall(c);
-		end;
-	end);
-end;
-
-function __Class:pairs(meta: Instance, callback: func)
-	for _, v in pairs(meta:GetChildren()) do
-		callback(v);
-	end;
-end;
-
-function __Class:ipairs(meta: Instance, callback: func)
-	for _, v in ipairs(meta:GetDescendants()) do
-		callback(v);
-	end;
-end;
-
-function __Class:IsEquiped(v: string)
-	return Character:FindFirstChild(v);
-end;
-
-function __Class:HaveItem(v: string)
-	return Character:FindFirstChild(v) or Backpack:FindFirstChild(v);
-end;
-
-function __Class:GetScriptENV(s: LocalScript)
-	return getsenv(s);
-end;
-
-function __Class:GetRuntimeENV(s: LocalScript)
-	return getrenv(s);
-end;
-
-function __Class:GetTags(s: Tags, callback: func)
-	for _, v in pairs(s:GetTags(s)) do
-		for _, a in pairs(v:GetChildren()) do
-			callback(v);
-		end;
-	end;
-end;
-
-function __Class:HOP()
-	pcall(function()
-		local ListServers = function(cursor)
-			return HttpService:JSONDecode(game:HttpGet("https://games.roblox.com/v1/games/"..PlaceId.."/servers/Public?sortOrder=Asc&limit=100" .. ((cursor and "&cursor="..cursor) or "")))
-		end
-		local Server, Next;
-		repeat
-			local Servers = ListServers(Next)
-			Server = Servers.data[1]
-			Next = Servers.nextPageCursor
-		until Server
-		TeleportService:TeleportToPlaceInstance(PlaceId,Server.id,LocalPlayer)
-	end)
-end
-
-function __Class:Rejoin()
-	if #Players:GetPlayers() <= 1 then
-		LocalPlayer:Kick("\nRejoining...")
-		wait()
-		TeleportService:Teleport(PlaceId, LocalPlayer)
-	else
-		TeleportService:TeleportToPlaceInstance(PlaceId, JobId, LocalPlayer)
-	end
-end
-
-function __Class:SetCameraFocus(target)
-	Camera.CameraSubject = target
-end;
-
-function __Class:FreeCam()
-	Camera.CameraType = Enum.CameraType.Scriptable
-end;
-
-function __Class:ResetCam()
-	Camera.CameraType = Enum.CameraType.Custom
-end;
-
-function __Class:FirePrompt(object)
-	if object:IsA("ProximityPrompt") then
-		fireproximityprompt(object)
-	elseif object:IsA("ClickDetector") then
-		fireclickdetector(object)
-	end
-end
-
-function __Class:KeyPress(keycode)
-    VirtualInputManager:SendKeyEvent(true, keycode, false, game)
-    task.wait(0.05)
-    VirtualInputManager:SendKeyEvent(false, keycode, false, game)
-end
-
-function __Class:Click(x, y, button)
-    local viewport = workspace.CurrentCamera.ViewportSize
-    x = x or viewport.X / 2
-    y = y or viewport.Y / 2
-    button = button or 0
-
-    VirtualInputManager:SendMouseButtonEvent(x, y, button, true, game, 0)
-    task.wait()
-    VirtualInputManager:SendMouseButtonEvent(x, y, button, false, game, 0)
-end
-
-function __Class:GetStats()
-	local fps = math.floor(1 / RunService.RenderStepped:Wait())
-	local ping = math.floor(Stats.Network.ServerStatsItem["Data Ping"]:GetValue())
-	local mem = math.floor(collectgarbage("count"))
-	local pos = HumanoidRootPart and HumanoidRootPart.Position or Vector3.zero
-	local physics = Stats.Workspace.HeartbeatFPS:GetValue()
-
-	return {
-		FPS = fps,
-		Ping = ping .. "ms",
-		Memory = mem .. " KB",
-		Position = tostring(pos),
-		PhysicsFPS = math.floor(physics),
-		PlayerCount = #Players:GetPlayers(),
-		Time = os.date("%H:%M:%S")
-	}
-end
-
-function __Class:Freeze()
-	if HumanoidRootPart then
-		HumanoidRootPart.Anchored = true
-	end
-end
-
-function __Class:unFreeze()
-	if HumanoidRootPart then
-		HumanoidRootPart.Anchored = false
-	end
-end
-
-function __Class:IsTouching(part)
-	if not HumanoidRootPart or not part then return false end
-	local touching = HumanoidRootPart:GetTouchingParts()
-	for _, p in ipairs(touching) do
-		if p == part then return true end
-	end
-	return false
-end
-
-function __Class:Touch(part)
-	if not HumanoidRootPart or not part then return end
-	if part:FindFirstChildOfClass("TouchTransmitter") or part:FindFirstChildWhichIsA("TouchInterest") then
-		firetouchinterest(HumanoidRootPart, part, 0)
-		task.wait()
-		firetouchinterest(HumanoidRootPart, part, 1)
-	end
-end
-
-function __Class:IsTouching(part)
-	if not HumanoidRootPart or not part then return false end
-	local touchingParts = HumanoidRootPart:GetTouchingParts()
-	for _, touching in ipairs(touchingParts) do
-		if touching == part then
-			return true
-		end
-	end
-	return false
-end
-
-
-
-Configs = Load();
-
-return {__Class;translate;Configs;Funcs;Default}
+return Lib
