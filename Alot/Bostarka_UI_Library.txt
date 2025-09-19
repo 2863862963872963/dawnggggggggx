@@ -1,0 +1,947 @@
+--[[
+_________________________________________________________________________________________
+|                                                                                         |
+|                                     Bostarka UI Library                                 |
+|                                                                                         |
+|   Description:                                                                          |
+|       A modern, clean, and easy-to-use UI library for Roblox scripts.                   |
+|       It provides a simple API to create windows, tabs, and various interactive         |
+|       components like buttons, labels, toggles, text inputs, and dropdowns.             |
+|                                                                                         |
+|                                                                                         |
+|_________________________________________________________________________________________|
+
+-- API DOCUMENTATION --
+
+-- Main Library Object: Bostarka
+--================================
+
+-- Bostarka:CreateWindow(options)
+--      Creates the main UI window.
+--      @param options (table): A table containing window settings.
+--          .Title (string): The text displayed in the title bar. Default: "UI Library".
+--          .Size (UDim2): The size of the window. Default: UDim2.fromOffset(800, 480).
+--      @returns (Window object): The created window instance.
+
+-- Window Object
+--================
+
+-- Window:CreateTab(name)
+--      Creates a new tab within the window.
+--      @param name (string): The name of the tab to be displayed.
+--      @returns (Tab object): The created tab instance.
+
+-- Window:CreateFooter(text)
+--      Adds a small text label to the bottom-right corner of the window.
+--      @param text (string): The text to display in the footer.
+
+-- Tab Object
+--=============
+
+-- Tab:CreateHeader(text)
+--      Creates a large header label within the tab.
+--      @param text (string): The header text.
+
+-- Tab:CreateLabel(text, options)
+--      Creates a standard text label.
+--      @param text (string): The content of the label.
+--      @param options (table, optional): Customization options.
+--          .Height (number): The height of the label.
+--          .Font (Enum.Font): The font of the text.
+--          .Color (Color3): The color of the text.
+--          .FontSize (number): The size of the text.
+--          .Center (boolean): Whether to center the text.
+--      @returns (Label object): An object with a :SetText(newText) method.
+
+-- Tab:CreateButton(options)
+--      Creates a clickable button.
+--      @param options (table): A table containing button settings.
+--          .Text (string): The text on the button. Default: "Button".
+--          .Callback (function): The function to run when the button is clicked.
+--      @returns (TextButton Instance): The created button instance.
+
+-- Tab:CreateToggle(options)
+--      Creates a checkbox-style toggle.
+--      @param options (table): A table containing toggle settings.
+--          .Text (string): The label displayed next to the toggle.
+--          .Default (boolean): The initial state of the toggle (true for on, false for off). Default: false.
+--          .Callback (function): The function to run when the toggle's state changes. It receives the new state as an argument (e.g., function(newState) ... end).
+--      @returns (Toggle object): An object with a :Set(state) method to programmatically change the toggle.
+
+-- Tab:CreateInput(options)
+--      Creates a text input box.
+--      @param options (table): A table containing input settings.
+--          .Text (string): The label displayed above the input box.
+--          .Placeholder (string): The placeholder text shown when the box is empty.
+--          .Default (string): The initial text in the input box. Default: "".
+--          .Callback (function): The function to run when the user finishes editing (presses Enter or clicks away). It receives the new text as an argument.
+--      @returns (Input object): An object with :SetText(text) and :GetText() methods.
+
+-- Tab:CreateMultiDropdown(options)
+--      Creates a dropdown menu where multiple options can be selected.
+--      @param options (table): A table containing dropdown settings.
+--          .Text (string): The label displayed above the dropdown.
+--          .Values (array of strings): A table of strings representing the selectable options.
+--          .Default (array of strings, optional): A table of strings for options that should be selected by default.
+--          .Callback (function): A function that runs whenever the selection changes. It receives a table with the currently selected values as an argument.
+--      @returns (Dropdown object): An object with :Set({values}) and :Get() methods.
+
+-- Tab:AddSpacing(height)
+--      Adds a vertical empty space.
+--      @param height (number, optional): The height of the space in pixels. Default: 10.
+
+-- Tab:CreateGroup(options)
+--      Creates a container to group elements horizontally or vertically.
+--      @param options (table): A table containing group settings.
+--          .Direction ("Horizontal" or "Vertical"): The layout direction of items inside. Default: "Vertical".
+--          .Spacing (number): The space between items in the group. Default: 10.
+--      @returns (Group object): The created group instance.
+
+-- Group Object
+--===============
+
+-- Group:CreateButton(options)
+--      Creates a button inside the group. Same options as Tab:CreateButton.
+
+-- EXAMPLE USAGE --
+
+local Bostarka = ; u gotta define shit here lil bro
+local Window = Bostarka:CreateWindow({
+    Title = "Bostarka Demo",
+    Size = UDim2.fromOffset(850, 520)
+})
+
+local Tab1 = Window:CreateTab("Main")
+local Tab2 = Window:CreateTab("Settings")
+local Tab3 = Window:CreateTab("Misc")
+
+-- Tab 1: Main Components
+Tab1:CreateHeader("Core Components")
+Tab1:CreateLabel("This tab showcases the primary interactive elements.")
+
+Tab1:CreateButton({
+    Text = "Click Me!",
+    Callback = function()
+        print("Button was clicked!")
+    end
+})
+
+local myLabel = Tab1:CreateLabel("This label will be updated by the toggle.")
+
+local myToggle = Tab1:CreateToggle({
+    Text = "Enable Feature",
+    Default = true,
+    Callback = function(state)
+        print("Toggle state changed to:", state)
+        myLabel:SetText("The feature is now " .. (state and "ENABLED" or "DISABLED") .. ".")
+    end
+})
+
+local myInput = Tab1:CreateInput({
+    Text = "Enter your name:",
+    Placeholder = "e.g., John Doe",
+    Callback = function(text)
+        print("Input changed to:", text)
+    end
+})
+
+Tab1:AddSpacing(20)
+
+local myDropdown = Tab1:CreateMultiDropdown({
+    Text = "Select your favorite fruits:",
+    Values = {"Apple", "Banana", "Orange", "Grape", "Strawberry", "Blueberry"},
+    Default = {"Apple", "Grape"},
+    Callback = function(selected)
+        print("Dropdown selection updated:")
+        for i, v in ipairs(selected) do
+            print("- " .. v)
+        end
+    end
+})
+
+Window:CreateFooter("Version 2.0")
+
+
+-- Tab 2: Grouping Demo
+Tab2:CreateHeader("Grouping and Layouts")
+Tab2:CreateLabel("Elements can be grouped together horizontally.")
+
+local HGroup = Tab2:CreateGroup({
+    Direction = "Horizontal",
+    Spacing = 10
+})
+
+HGroup:CreateButton({ Text = "Option 1" })
+HGroup:CreateButton({ Text = "Option 2" })
+HGroup:CreateButton({ Text = "Option 3" })
+
+Tab2:CreateLabel("Or vertically, which is the default behavior.")
+local VGroup = Tab2:CreateGroup()
+VGroup:CreateButton({Text = "Top Button"})
+VGroup:CreateButton({Text = "Bottom Button"})
+
+
+-- Tab 3: Empty
+Tab3:CreateHeader("Miscellaneous")
+Tab3:CreateLabel("This tab is currently empty.")
+
+]]
+
+local Bostarka = {}
+local Bostarka_Window = {}
+Bostarka_Window.__index = Bostarka_Window;
+local Bostarka_Tab = {}
+Bostarka_Tab.__index = Bostarka_Tab;
+local Bostarka_Group = {}
+Bostarka_Group.__index = Bostarka_Group;
+local success, gui = pcall(gethui)
+local ScreenGui = (success and typeof(gui) == "Instance" and gui:IsA("ScreenGui")) and gui or (function()
+	if game:GetService("CoreGui"):FindFirstChild("Bostarka_ScreenGui") then
+		game:GetService("CoreGui").Bostarka_ScreenGui:Destroy()
+	end;
+	local cg = Instance.new("ScreenGui")
+	cg.Name = "Bostarka_ScreenGui"
+	cg.DisplayOrder = 999;
+	cg.ResetOnSpawn = false;
+	cg.ZIndexBehavior = Enum.ZIndexBehavior.Sibling;
+	cg.Parent = game:GetService("CoreGui")
+	return cg
+end)()
+Bostarka.Theme = {
+	Background = Color3.fromRGB(15, 18, 26),
+	Secondary = Color3.fromRGB(26, 30, 41),
+	Accent = Color3.fromRGB(58, 93, 226),
+	AccentLight = Color3.fromRGB(80, 110, 240),
+	Text = Color3.fromRGB(255, 255, 255),
+	TextSecondary = Color3.fromRGB(180, 185, 190),
+	Font = Enum.Font.Gotham,
+	HeaderFont = Enum.Font.GothamBold,
+	CodeFont = Enum.Font.Code,
+	CornerRadius = UDim.new(0, 8),
+	StrokeThickness = 1,
+	Padding = 12
+}
+local function Create(instanceType)
+	return function(properties)
+		local obj = Instance.new(instanceType)
+		for prop, value in pairs(properties) do
+			obj[prop] = value
+		end;
+		return obj
+	end
+end;
+function Bostarka:CreateWindow(options)
+	local window = setmetatable({}, Bostarka_Window)
+	window.Title = options.Title or "UI Library"
+	window.Size = options.Size or UDim2.new(0, 800, 0, 480)
+	window.Tabs = {}
+	window.ContentFrames = {}
+	window.ActiveTab = nil;
+	window.MainFrame = Create("Frame"){
+		Name = "MainWindow",
+		Size = window.Size,
+		Position = UDim2.fromOffset((ScreenGui.AbsoluteSize.X - window.Size.X.Offset) / 2, (ScreenGui.AbsoluteSize.Y - window.Size.Y.Offset) / 2),
+		BackgroundColor3 = Bostarka.Theme.Background,
+		BorderSizePixel = 0,
+		ClipsDescendants = true,
+		Parent = ScreenGui
+	}
+	Create("UICorner"){
+		CornerRadius = Bostarka.Theme.CornerRadius,
+		Parent = window.MainFrame
+	}
+	Create("UIStroke"){
+		Color = Bostarka.Theme.Accent,
+		Thickness = Bostarka.Theme.StrokeThickness,
+		Parent = window.MainFrame
+	}
+	local titleBar = Create("Frame"){
+		Name = "TitleBar",
+		Size = UDim2.new(1, 0, 0, 40),
+		BackgroundColor3 = Bostarka.Theme.Secondary,
+		BorderSizePixel = 0,
+		Parent = window.MainFrame
+	}
+	local titleLabel = Create("TextLabel"){
+		Name = "TitleLabel",
+		Size = UDim2.new(1, -100, 1, 0),
+		Position = UDim2.fromOffset(Bostarka.Theme.Padding, 0),
+		BackgroundColor3 = Bostarka.Theme.Secondary,
+		BackgroundTransparency = 1,
+		Font = Bostarka.Theme.HeaderFont,
+		Text = window.Title,
+		TextColor3 = Bostarka.Theme.Text,
+		TextSize = 16,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		Parent = titleBar
+	}
+	Create("UIStroke"){
+		Color = Bostarka.Theme.Accent,
+		Thickness = 0.5,
+		ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+		Parent = titleLabel
+	}
+	local controlsFrame = Create("Frame"){
+		Name = "Controls",
+		Size = UDim2.new(0, 80, 1, -14),
+		Position = UDim2.new(1, -80, 0, 7),
+		BackgroundTransparency = 1,
+		Parent = titleBar
+	}
+	local controlsLayout = Create("UIListLayout"){
+		FillDirection = Enum.FillDirection.Horizontal,
+		HorizontalAlignment = Enum.HorizontalAlignment.Right,
+		SortOrder = Enum.SortOrder.LayoutOrder,
+		Padding = UDim.new(0, 5),
+		Parent = controlsFrame
+	}
+	local closeButton = Create("TextButton"){
+		Name = "Close",
+		Size = UDim2.new(0, 30, 0, 26),
+		BackgroundColor3 = Bostarka.Theme.Secondary,
+		Text = "X",
+		Font = Bostarka.Theme.HeaderFont,
+		TextSize = 16,
+		TextColor3 = Bostarka.Theme.TextSecondary,
+		Parent = controlsFrame
+	}
+	Create("UICorner"){
+		CornerRadius = UDim.new(0, 6),
+		Parent = closeButton
+	}
+	closeButton.MouseButton1Click:Connect(function()
+		ScreenGui:Destroy()
+	end)
+	local minimizeButton = Create("TextButton"){
+		Name = "Minimize",
+		Size = UDim2.new(0, 30, 0, 26),
+		BackgroundColor3 = Bostarka.Theme.Secondary,
+		Text = "-",
+		Font = Bostarka.Theme.HeaderFont,
+		TextSize = 24,
+		TextColor3 = Bostarka.Theme.TextSecondary,
+		Parent = controlsFrame
+	}
+	Create("UICorner"){
+		CornerRadius = UDim.new(0, 6),
+		Parent = minimizeButton
+	}
+	local bodyFrame = Create("Frame"){
+		Name = "Body",
+		Size = UDim2.new(1, 0, 1, -40),
+		Position = UDim2.new(0, 0, 0, 40),
+		BackgroundTransparency = 1,
+		Parent = window.MainFrame
+	}
+	window.TabContainer = Create("ScrollingFrame"){
+		Name = "TabContainer",
+		Size = UDim2.new(0, 200, 1, 0),
+		BackgroundColor3 = Bostarka.Theme.Secondary,
+		BorderSizePixel = 0,
+		ScrollBarImageColor3 = Bostarka.Theme.Accent,
+		ScrollBarThickness = 4,
+		Parent = bodyFrame
+	}
+	Create("UIListLayout"){
+		FillDirection = Enum.FillDirection.Vertical,
+		SortOrder = Enum.SortOrder.LayoutOrder,
+		Padding = UDim.new(0, 5),
+		Parent = window.TabContainer
+	}
+	Create("UIPadding"){
+		PaddingTop = UDim.new(0, Bostarka.Theme.Padding),
+		PaddingLeft = UDim.new(0, Bostarka.Theme.Padding),
+		PaddingRight = UDim.new(0, Bostarka.Theme.Padding),
+		Parent = window.TabContainer
+	}
+	window.ContentContainer = Create("Frame"){
+		Name = "ContentContainer",
+		Size = UDim2.new(1, -200, 1, 0),
+		Position = UDim2.new(0, 200, 0, 0),
+		BackgroundTransparency = 1,
+		Parent = bodyFrame
+	}
+	local bodyVisible = true;
+	minimizeButton.MouseButton1Click:Connect(function()
+		bodyVisible = not bodyVisible;
+		bodyFrame.Visible = bodyVisible;
+		window.MainFrame.Size = bodyVisible and window.Size or UDim2.new(window.Size.X.Scale, window.Size.X.Offset, 0, 40)
+		minimizeButton.Text = bodyVisible and "-" or "+"
+	end)
+	local dragging, dragStart, startPos;
+	titleBar.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+			dragging = true;
+			dragStart = input.Position;
+			startPos = window.MainFrame.Position;
+			input.Changed:Connect(function()
+				if input.UserInputState == Enum.UserInputState.End then
+					dragging = false
+				end
+			end)
+		end
+	end)
+	titleBar.InputChanged:Connect(function(input)
+		if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+			local delta = input.Position - dragStart;
+			window.MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+		end
+	end)
+	return window
+end;
+function Bostarka_Window:CreateTab(name)
+	local tab = setmetatable({}, Bostarka_Tab)
+	tab.ContentFrame = Create("ScrollingFrame"){
+		Name = name .. "_Content",
+		Size = UDim2.new(1, 0, 1, 0),
+		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
+		Visible = false,
+		CanvasSize = UDim2.new(0, 0, 0, 0),
+		AutomaticCanvasSize = Enum.AutomaticSize.Y,
+		ScrollBarImageColor3 = Bostarka.Theme.Accent,
+		ScrollBarThickness = 4,
+		Parent = self.ContentContainer
+	}
+	local layout = Create("UIListLayout"){
+		FillDirection = Enum.FillDirection.Vertical,
+		SortOrder = Enum.SortOrder.LayoutOrder,
+		Padding = UDim.new(0, 10),
+		Parent = tab.ContentFrame
+	}
+	Create("UIPadding"){
+		PaddingTop = UDim.new(0, Bostarka.Theme.Padding),
+		PaddingBottom = UDim.new(0, Bostarka.Theme.Padding),
+		PaddingLeft = UDim.new(0, Bostarka.Theme.Padding),
+		PaddingRight = UDim.new(0, Bostarka.Theme.Padding),
+		Parent = tab.ContentFrame
+	}
+	local tabButton = Create("TextButton"){
+		Name = name,
+		Size = UDim2.new(1, 0, 0, 40),
+		BackgroundColor3 = Bostarka.Theme.Secondary,
+		AutoButtonColor = false,
+		Text = "  " .. name,
+		Font = Bostarka.Theme.Font,
+		TextSize = 16,
+		TextColor3 = Bostarka.Theme.TextSecondary,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		Parent = self.TabContainer
+	}
+	Create("UICorner"){
+		CornerRadius = Bostarka.Theme.CornerRadius,
+		Parent = tabButton
+	}
+	local tabStroke = Create("UIStroke"){
+		Color = Bostarka.Theme.Secondary,
+		Thickness = Bostarka.Theme.StrokeThickness,
+		Parent = tabButton
+	}
+	table.insert(self.Tabs, {
+		Button = tabButton,
+		Frame = tab.ContentFrame,
+		Stroke = tabStroke
+	})
+	tabButton.MouseButton1Click:Connect(function()
+		for _, t in ipairs(self.Tabs) do
+			t.Frame.Visible = false;
+			t.Button.TextColor3 = Bostarka.Theme.TextSecondary;
+			t.Stroke.Color = Bostarka.Theme.Secondary
+		end;
+		tab.ContentFrame.Visible = true;
+		tabButton.TextColor3 = Bostarka.Theme.Text;
+		tabStroke.Color = Bostarka.Theme.Accent;
+		self.ActiveTab = tab
+	end)
+	tabButton.MouseEnter:Connect(function()
+		if self.ActiveTab ~= tab then
+			tabButton.TextColor3 = Bostarka.Theme.Text
+		end
+	end)
+	tabButton.MouseLeave:Connect(function()
+		if self.ActiveTab ~= tab then
+			tabButton.TextColor3 = Bostarka.Theme.TextSecondary
+		end
+	end)
+	if #self.Tabs == 1 then
+		pcall(function() tabButton.MouseButton1Click:Fire() end)
+	end;
+	return tab
+end;
+function Bostarka_Window:CreateFooter(text)
+	Create("TextLabel"){
+		Name = "Footer",
+		Size = UDim2.new(0, 150, 0, 30),
+		Position = UDim2.new(1, -150 - Bostarka.Theme.Padding, 1, -30 - Bostarka.Theme.Padding),
+		BackgroundTransparency = 1,
+		Font = Bostarka.Theme.Font,
+		Text = text,
+		TextColor3 = Bostarka.Theme.TextSecondary,
+		TextSize = 14,
+		TextXAlignment = Enum.TextXAlignment.Right,
+		Parent = self.MainFrame
+	}
+end;
+function Bostarka_Tab:CreateHeader(text)
+	local label = Create("TextLabel"){
+		Name = "Header",
+		Size = UDim2.new(1, 0, 0, 30),
+		BackgroundTransparency = 1,
+		Font = Bostarka.Theme.HeaderFont,
+		Text = text,
+		TextColor3 = Bostarka.Theme.Text,
+		TextSize = 22,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		Parent = self.ContentFrame
+	}
+	return label
+end;
+function Bostarka_Tab:CreateLabel(text, options)
+	options = options or {}
+	local label = Create("TextLabel"){
+		Name = "Label",
+		Size = UDim2.new(1, 0, 0, options.Height or 20),
+		BackgroundTransparency = 1,
+		Font = options.Font or Bostarka.Theme.Font,
+		Text = text,
+		TextColor3 = options.Color or Bostarka.Theme.TextSecondary,
+		TextSize = options.FontSize or 14,
+		TextXAlignment = options.Center and Enum.TextXAlignment.Center or Enum.TextXAlignment.Left,
+		Parent = self.ContentFrame
+	}
+	local obj = {}
+	function obj:SetText(newText)
+		label.Text = newText
+	end;
+	function obj:IsVisible()
+		return label.AbsoluteSize.Y > 0
+	end;
+	return obj
+end;
+function Bostarka_Tab:CreateButton(options)
+	local button = Create("TextButton"){
+		Name = "Button",
+		Size = UDim2.new(1, 0, 0, 38),
+		BackgroundColor3 = Bostarka.Theme.Secondary,
+		Font = Bostarka.Theme.Font,
+		Text = options.Text or "Button",
+		TextColor3 = Bostarka.Theme.TextSecondary,
+		TextSize = 16,
+		Parent = options.Parent or self.ContentFrame
+	}
+	Create("UICorner"){
+		CornerRadius = Bostarka.Theme.CornerRadius,
+		Parent = button
+	}
+	Create("UIStroke"){
+		Color = Bostarka.Theme.Accent,
+		Thickness = Bostarka.Theme.StrokeThickness,
+		Parent = button
+	}
+	if options.Callback and typeof(options.Callback) == "function" then
+		button.MouseButton1Click:Connect(options.Callback)
+	end;
+	button.MouseEnter:Connect(function()
+		button.TextColor3 = Bostarka.Theme.Text
+	end)
+	button.MouseLeave:Connect(function()
+		button.TextColor3 = Bostarka.Theme.TextSecondary
+	end)
+	return button
+end;
+function Bostarka_Tab:CreateToggle(options)
+	options = options or {}
+	local toggled = options.Default or false;
+	local container = Create("Frame"){
+		Name = "ToggleContainer",
+		Size = UDim2.new(1, 0, 0, 24),
+		BackgroundTransparency = 1,
+		Parent = self.ContentFrame
+	}
+	local label = Create("TextLabel"){
+		Name = "ToggleLabel",
+		Size = UDim2.new(1, -34, 1, 0),
+		BackgroundTransparency = 1,
+		Font = Bostarka.Theme.Font,
+		Text = options.Text or "Toggle",
+		TextColor3 = Bostarka.Theme.Text,
+		TextSize = 14,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		Parent = container
+	}
+	local toggleButton = Create("TextButton"){
+		Name = "ToggleButton",
+		Size = UDim2.fromOffset(24, 24),
+		Position = UDim2.new(1, -24, 0, 0),
+		BackgroundColor3 = Bostarka.Theme.Secondary,
+		Text = "",
+		Parent = container
+	}
+	Create("UICorner"){
+		CornerRadius = UDim.new(0, 6),
+		Parent = toggleButton
+	}
+	local toggleStroke = Create("UIStroke"){
+		Color = toggled and Bostarka.Theme.Accent or Bostarka.Theme.TextSecondary,
+		Thickness = Bostarka.Theme.StrokeThickness,
+		Parent = toggleButton
+	}
+	local check = Create("Frame"){
+		Name = "Check",
+		Size = UDim2.fromScale(0.6, 0.6),
+		Position = UDim2.fromScale(0.2, 0.2),
+		BackgroundColor3 = Bostarka.Theme.AccentLight,
+		BorderSizePixel = 0,
+		Visible = toggled,
+		Parent = toggleButton
+	}
+	Create("UICorner"){
+		CornerRadius = UDim.new(0, 4),
+		Parent = check
+	}
+	local function updateVisuals()
+		check.Visible = toggled;
+		toggleStroke.Color = toggled and Bostarka.Theme.Accent or Bostarka.Theme.TextSecondary
+	end;
+	toggleButton.MouseButton1Click:Connect(function()
+		toggled = not toggled;
+		updateVisuals()
+		if options.Callback then
+			pcall(options.Callback, toggled)
+		end
+	end)
+	local obj = {}
+	function obj:Set(state)
+		toggled = state;
+		updateVisuals()
+	end;
+	return obj
+end;
+function Bostarka_Tab:CreateInput(options)
+	options = options or {}
+	local container = Create("Frame"){
+		Name = "InputContainer",
+		Size = UDim2.new(1, 0, 0, 60),
+		BackgroundTransparency = 1,
+		Parent = self.ContentFrame
+	}
+	Create("UIListLayout"){
+		FillDirection = Enum.FillDirection.Vertical,
+		SortOrder = Enum.SortOrder.LayoutOrder,
+		Padding = UDim.new(0, 5),
+		Parent = container
+	}
+	local label = Create("TextLabel"){
+		Name = "InputLabel",
+		Size = UDim2.new(1, 0, 0, 15),
+		BackgroundTransparency = 1,
+		Font = Bostarka.Theme.Font,
+		Text = options.Text or "Input",
+		TextColor3 = Bostarka.Theme.Text,
+		TextSize = 14,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		Parent = container
+	}
+	local textBox = Create("TextBox"){
+		Name = "InputBox",
+		Size = UDim2.new(1, 0, 0, 38),
+		BackgroundColor3 = Bostarka.Theme.Secondary,
+		Font = Bostarka.Theme.Font,
+		Text = options.Default or "",
+		PlaceholderText = options.Placeholder or "",
+		PlaceholderColor3 = Bostarka.Theme.TextSecondary,
+		TextColor3 = Bostarka.Theme.Text,
+		TextSize = 14,
+		ClearTextOnFocus = false,
+		Parent = container
+	}
+	Create("UICorner"){
+		CornerRadius = Bostarka.Theme.CornerRadius,
+		Parent = textBox
+	}
+	local stroke = Create("UIStroke"){
+		Color = Bostarka.Theme.Accent,
+		Thickness = Bostarka.Theme.StrokeThickness,
+		Parent = textBox
+	}
+    -- FIXED: Changed FocusGained to Focused
+	textBox.Focused:Connect(function()
+		stroke.Color = Bostarka.Theme.AccentLight
+	end)
+	textBox.FocusLost:Connect(function(enterPressed) -- enterPressed is true if Enter was used to lose focus
+		stroke.Color = Bostarka.Theme.Accent
+		if options.Callback then
+			pcall(options.Callback, textBox.Text)
+		end
+	end)
+	local obj = {}
+	function obj:SetText(text)
+		textBox.Text = text
+	end;
+	function obj:GetText()
+		return textBox.Text
+	end;
+	return obj
+end;
+function Bostarka_Tab:CreateMultiDropdown(options)
+	options = options or {}
+	local selectedValues = {}
+	for _, v in pairs(options.Default or {}) do
+		selectedValues[v] = true
+	end
+	
+	local isOpen = false
+	
+	local container = Create("Frame"){
+		Name = "DropdownContainer",
+		Size = UDim2.new(1, 0, 0, 60),
+		BackgroundTransparency = 1,
+		ZIndex = 2,
+		Parent = self.ContentFrame
+	}
+	Create("UIListLayout"){
+		FillDirection = Enum.FillDirection.Vertical,
+		SortOrder = Enum.SortOrder.LayoutOrder,
+		Padding = UDim.new(0, 5),
+		Parent = container
+	}
+	local label = Create("TextLabel"){
+		Name = "DropdownLabel",
+		Size = UDim2.new(1, 0, 0, 15),
+		BackgroundTransparency = 1,
+		Font = Bostarka.Theme.Font,
+		Text = options.Text or "Dropdown",
+		TextColor3 = Bostarka.Theme.Text,
+		TextSize = 14,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		Parent = container
+	}
+	local dropdownButton = Create("TextButton"){
+		Name = "DropdownButton",
+		Size = UDim2.new(1, 0, 0, 38),
+		BackgroundColor3 = Bostarka.Theme.Secondary,
+		Font = Bostarka.Theme.Font,
+		TextColor3 = Bostarka.Theme.Text,
+		TextSize = 14,
+		Parent = container
+	}
+	local arrow = Create("TextLabel"){
+		Name = "Arrow",
+		Size = UDim2.new(0, 20, 1, 0),
+		Position = UDim2.new(1, -25, 0, 0),
+		BackgroundTransparency = 1,
+		Font = Bostarka.Theme.HeaderFont,
+		Text = "▼",
+		TextColor3 = Bostarka.Theme.TextSecondary,
+		TextSize = 14,
+		Parent = dropdownButton
+	}
+	Create("UICorner"){
+		CornerRadius = Bostarka.Theme.CornerRadius,
+		Parent = dropdownButton
+	}
+	Create("UIStroke"){
+		Color = Bostarka.Theme.Accent,
+		Thickness = Bostarka.Theme.StrokeThickness,
+		Parent = dropdownButton
+	}
+	local dropdownList = Create("ScrollingFrame"){
+		Name = "DropdownList",
+		Size = UDim2.new(1, 0, 0, 150),
+		Position = UDim2.new(0, 0, 1, 5),
+		BackgroundColor3 = Bostarka.Theme.Secondary,
+		BorderSizePixel = 0,
+		Visible = false,
+		ZIndex = 3,
+		CanvasSize = UDim2.new(),
+		AutomaticCanvasSize = Enum.AutomaticSize.Y,
+		ScrollBarImageColor3 = Bostarka.Theme.Accent,
+		ScrollBarThickness = 4,
+		Parent = dropdownButton
+	}
+	Create("UIListLayout"){
+		Padding = UDim.new(0, 2),
+		SortOrder = Enum.SortOrder.LayoutOrder,
+		Parent = dropdownList
+	}
+	Create("UICorner"){
+		CornerRadius = Bostarka.Theme.CornerRadius,
+		Parent = dropdownList
+	}
+	Create("UIStroke"){
+		Color = Bostarka.Theme.Accent,
+		Thickness = Bostarka.Theme.StrokeThickness,
+		Parent = dropdownList
+	}
+	Create("UIPadding"){
+		PaddingLeft = UDim.new(0, 4),
+		PaddingRight = UDim.new(0, 4),
+		PaddingTop = UDim.new(0, 4),
+		PaddingBottom = UDim.new(0, 4),
+		Parent = dropdownList
+	}
+	
+	local function updateButtonText()
+		local count = 0
+		for _ in pairs(selectedValues) do
+			count = count + 1
+		end
+		if count == 0 then
+			dropdownButton.Text = "  Select items..."
+		elseif count == 1 then
+			for val in pairs(selectedValues) do
+				dropdownButton.Text = "  " .. val
+			end
+		else
+			dropdownButton.Text = "  " .. count .. " items selected"
+		end
+	end
+	
+	for _, value in ipairs(options.Values) do
+		local itemButton = Create("TextButton"){
+			Name = value,
+			Size = UDim2.new(1, 0, 0, 30),
+			BackgroundColor3 = Bostarka.Theme.Secondary,
+			Text = "",
+			AutoButtonColor = false,
+			Parent = dropdownList
+		}
+		local itemLabel = Create("TextLabel"){
+			Size = UDim2.new(1, -30, 1, 0),
+			Position = UDim2.new(0, 5, 0, 0),
+			BackgroundTransparency = 1,
+			Font = Bostarka.Theme.Font,
+			Text = value,
+			TextColor3 = Bostarka.Theme.TextSecondary,
+			TextSize = 14,
+			TextXAlignment = Enum.TextXAlignment.Left,
+			Parent = itemButton
+		}
+		local checkBox = Create("Frame"){
+			Size = UDim2.fromOffset(18, 18),
+			Position = UDim2.new(1, -24, 0.5, -9),
+			BackgroundColor3 = Bostarka.Theme.Background,
+			BorderSizePixel = 0,
+			Parent = itemButton
+		}
+		Create("UICorner"){
+			CornerRadius = UDim.new(0, 4),
+			Parent = checkBox
+		}
+		local check = Create("Frame"){
+			Size = UDim2.fromScale(0.7, 0.7),
+			Position = UDim2.fromScale(0.15, 0.15),
+			BackgroundColor3 = Bostarka.Theme.AccentLight,
+			BorderSizePixel = 0,
+			Visible = selectedValues[value] == true,
+			Parent = checkBox
+		}
+		Create("UICorner"){
+			CornerRadius = UDim.new(0, 3),
+			Parent = check
+		}
+		itemButton.MouseEnter:Connect(function() itemLabel.TextColor3 = Bostarka.Theme.Text end)
+		itemButton.MouseLeave:Connect(function() itemLabel.TextColor3 = Bostarka.Theme.TextSecondary end)
+		
+		itemButton.MouseButton1Click:Connect(function()
+			selectedValues[value] = not selectedValues[value]
+			check.Visible = selectedValues[value]
+			updateButtonText()
+			
+			if options.Callback then
+				local result = {}
+				for k, v in pairs(selectedValues) do
+					if v then table.insert(result, k) end
+				end
+				pcall(options.Callback, result)
+			end
+		end)
+	end
+	
+	dropdownButton.MouseButton1Click:Connect(function()
+		isOpen = not isOpen
+		dropdownList.Visible = isOpen
+		arrow.Text = isOpen and "▲" or "▼"
+		if isOpen then
+			container.Size = UDim2.new(1, 0, 0, 60 + dropdownList.Size.Y.Offset + 5)
+		else
+			container.Size = UDim2.new(1, 0, 0, 60)
+		end
+	end)
+	
+	updateButtonText()
+	
+	local obj = {}
+	function obj:Get()
+		local result = {}
+		for k, v in pairs(selectedValues) do
+			if v then table.insert(result, k) end
+		end
+		return result
+	end
+	function obj:Set(values)
+		selectedValues = {}
+		for _, v in ipairs(values) do
+			selectedValues[v] = true
+		end
+		for _, itemButton in ipairs(dropdownList:GetChildren()) do
+			if itemButton:IsA("TextButton") then
+				local check = itemButton:FindFirstChild("Frame"):FindFirstChild("Frame")
+				check.Visible = selectedValues[itemButton.Name] == true
+			end
+		end
+		updateButtonText()
+	end
+	
+	return obj
+end;
+function Bostarka_Tab:AddSpacing(height)
+	Create("Frame"){
+		Name = "Spacing",
+		Size = UDim2.new(1, 0, 0, height or 10),
+		BackgroundTransparency = 1,
+		Parent = self.ContentFrame
+	}
+end;
+function Bostarka_Tab:CreateGroup(options)
+	options = options or {}
+	local group = setmetatable({}, Bostarka_Group)
+	group.Frame = Create("Frame"){
+		Name = "Group",
+		Size = UDim2.new(1, 0, 0, 40),
+		AutomaticSize = Enum.AutomaticSize.Y,
+		BackgroundTransparency = 1,
+		Parent = self.ContentFrame
+	}
+	local layout = Create("UIListLayout"){
+		FillDirection = options.Direction == "Horizontal" and Enum.FillDirection.Horizontal or Enum.FillDirection.Vertical,
+		VerticalAlignment = Enum.VerticalAlignment.Center,
+		SortOrder = Enum.SortOrder.LayoutOrder,
+		Padding = UDim.new(0, options.Spacing or 10),
+		Parent = group.Frame
+	}
+	if options.Direction == "Horizontal" then
+		Create("UISizeConstraint"){
+			MaxSize = Vector2.new(math.huge, 38),
+			Parent = group.Frame
+		}
+		group.Frame.Size = UDim2.new(1, 0, 0, 38)
+		group.Frame.AutomaticSize = Enum.AutomaticSize.None
+	end;
+	return group
+end;
+function Bostarka_Group:CreateButton(options)
+	options.Parent = self.Frame;
+	local button = Bostarka_Tab.CreateButton(self, options)
+	if self.Frame.UIListLayout.FillDirection == Enum.FillDirection.Horizontal then
+		local count = 0
+		for _, v in ipairs(self.Frame:GetChildren()) do
+			if v:IsA("TextButton") then
+				count = count + 1
+			end
+		end
+		local padding = self.Frame.UIListLayout.Padding.Offset * (count - 1)
+		button.Size = UDim2.new(1/count, -padding / count, 1, 0)
+	end;
+	return button
+end;
