@@ -70,9 +70,6 @@ local Toggle = Section:AddToggle({
     Title = "Toggle",
     Content = "This is a Toggle",
     Default = false,
-    Multi = true,
-    Options = {"Option 1", "Option 2"},
-    Selecting = {"Option 1"},
     Callback = function(value)
         print(value)
     end
