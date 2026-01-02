@@ -296,7 +296,8 @@ local function RegisterContainerFunctions(Container, PageInstance)
             Parent = Main, BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 40), CanvasSize = UDim2.new(0,0,0,0), AutomaticCanvasSize = Enum.AutomaticSize.X, ScrollBarThickness = 0, ScrollingDirection = Enum.ScrollingDirection.X
         }); Create("UIListLayout", {Parent = Header, FillDirection = Enum.FillDirection.Horizontal, SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 5), VerticalAlignment = Enum.VerticalAlignment.Center}); Create("UIPadding", {Parent = Header, PaddingLeft = UDim.new(0, 10)})
         
-        local Content = Create("Frame", {Parent = Main, BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 0), AutomaticSize = Enum.AutomaticSize.Y, Position = UDim2.new(0,0,0,45)}); Create("UIPadding", {Parent = Content, PaddingTop = UDim.new(0, 45), PaddingBottom = UDim.new(0, 10), PaddingLeft = UDim.new(0,10), PaddingRight = UDim.new(0,10)})
+        -- MODIFIED: Reduced Y Position and PaddingTop to close the gap
+        local Content = Create("Frame", {Parent = Main, BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 0), AutomaticSize = Enum.AutomaticSize.Y, Position = UDim2.new(0,0,0,40)}); Create("UIPadding", {Parent = Content, PaddingTop = UDim.new(0, 5), PaddingBottom = UDim.new(0, 10), PaddingLeft = UDim.new(0,10), PaddingRight = UDim.new(0,10)})
         
         local TabFrames, TabBtns = {}, {}
         for i, tName in ipairs(Config.Tabs) do
@@ -394,7 +395,8 @@ local function RegisterContainerFunctions(Container, PageInstance)
         local Header = Create("Frame", {Parent = Main, BackgroundColor3 = Library.Theme.Element, Size = UDim2.new(1, 0, 0, 24)}); Create("UICorner", {Parent = Header, CornerRadius = UDim.new(0, 6)})
         Create("TextLabel", {Parent = Header, Text = Config.Title or "Box", TextColor3 = Library.Theme.SubText, Font = Enum.Font.GothamBold, TextSize = 12, Size = UDim2.new(1, -30, 1, 0), Position = UDim2.new(0, 10, 0, 0), TextXAlignment = Enum.TextXAlignment.Left, BackgroundTransparency = 1})
         local ToggleBtn = Create("TextButton", {Parent = Header, Text = "-", TextSize = 14, TextColor3 = Library.Theme.Text, BackgroundTransparency = 1, Size = UDim2.new(0, 24, 0, 24), Position = UDim2.new(1, -24, 0, 0), Font = Enum.Font.GothamBold})
-        local Content = Create("Frame", {Parent = Main, BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 0), AutomaticSize = Enum.AutomaticSize.Y}); Create("UIPadding", {Parent = Content, PaddingTop = UDim.new(0, 30), PaddingBottom = UDim.new(0, 30), PaddingLeft = UDim.new(0,5), PaddingRight = UDim.new(0,5)})
+        -- MODIFIED: Reduced PaddingTop and PaddingBottom to 10
+        local Content = Create("Frame", {Parent = Main, BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 0), AutomaticSize = Enum.AutomaticSize.Y}); Create("UIPadding", {Parent = Content, PaddingTop = UDim.new(0, 10), PaddingBottom = UDim.new(0, 10), PaddingLeft = UDim.new(0,5), PaddingRight = UDim.new(0,5)})
         local Bar = Create("Frame", {Parent = Main, BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 25)}); Create("UIListLayout", {Parent = Main, SortOrder = Enum.SortOrder.LayoutOrder}); Header.LayoutOrder=1; Content.LayoutOrder=2; Bar.LayoutOrder=3
         local TabBtns, TabFrames, Collapsed = {}, {}, false
         Create("UIListLayout", {Parent = Bar, FillDirection = Enum.FillDirection.Horizontal, SortOrder = Enum.SortOrder.LayoutOrder})
