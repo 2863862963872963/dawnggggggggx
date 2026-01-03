@@ -20,7 +20,8 @@ local Library = {
     Keybind = Enum.KeyCode.RightControl,
     IsVisible = true,
     Flags = {},
-    ConfigFolder = "ModernUI_Configs"
+    ConfigFolder = "ModernUI_Configs",
+    Version = "11.0 Ultimate"
 }
 
 --// THEME SYSTEM
@@ -36,7 +37,9 @@ Library.Themes = {
         Divider = Color3.fromRGB(45, 45, 50),
         Gradient1 = Color3.fromRGB(0, 140, 255),
         Gradient2 = Color3.fromRGB(140, 0, 255),
-        Red = Color3.fromRGB(255, 60, 60)
+        Red = Color3.fromRGB(255, 60, 60),
+        Green = Color3.fromRGB(46, 204, 113),
+        Yellow = Color3.fromRGB(241, 196, 15)
     },
     PastelPurple = {
         Background = Color3.fromRGB(24, 20, 30),
@@ -49,7 +52,9 @@ Library.Themes = {
         Divider = Color3.fromRGB(60, 50, 70),
         Gradient1 = Color3.fromRGB(255, 150, 255),
         Gradient2 = Color3.fromRGB(150, 100, 255),
-        Red = Color3.fromRGB(255, 100, 100)
+        Red = Color3.fromRGB(255, 100, 100),
+        Green = Color3.fromRGB(100, 255, 150),
+        Yellow = Color3.fromRGB(255, 255, 150)
     },
     Sky = {
         Background = Color3.fromRGB(230, 240, 255),
@@ -62,7 +67,9 @@ Library.Themes = {
         Divider = Color3.fromRGB(200, 220, 240),
         Gradient1 = Color3.fromRGB(50, 180, 255),
         Gradient2 = Color3.fromRGB(0, 100, 200),
-        Red = Color3.fromRGB(255, 80, 80)
+        Red = Color3.fromRGB(255, 80, 80),
+        Green = Color3.fromRGB(0, 200, 100),
+        Yellow = Color3.fromRGB(255, 200, 0)
     },
     Garden = {
         Background = Color3.fromRGB(20, 30, 20),
@@ -75,7 +82,9 @@ Library.Themes = {
         Divider = Color3.fromRGB(50, 70, 50),
         Gradient1 = Color3.fromRGB(46, 204, 113),
         Gradient2 = Color3.fromRGB(39, 174, 96),
-        Red = Color3.fromRGB(200, 60, 60)
+        Red = Color3.fromRGB(200, 60, 60),
+        Green = Color3.fromRGB(50, 255, 50),
+        Yellow = Color3.fromRGB(255, 255, 0)
     }
 }
 Library.Theme = Library.Themes.Dark
@@ -90,6 +99,8 @@ function Library:SetTheme(ThemeName)
                 ColorSequenceKeypoint.new(1, Library.Theme.Background2)
             }
         end
+        -- Refresh UI colors logic would go here if fully reactive, 
+        -- but for now updates gradient background instantly.
     end
 end
 
@@ -236,6 +247,73 @@ local function RegisterContainerFunctions(Container, PageInstance)
         
         local SectionHandler = {}; RegisterContainerFunctions(SectionHandler, ContainerFrame); AddAPI(SectionHandler, SFrame, {}); return SectionHandler
     end
+    
+    --// SPACER / DIVIDER (Requested)
+    function Funcs:Divide()
+        local F = Create("Frame", {Parent = PageInstance, BackgroundTransparency = 1, Size = UDim2.new(1,0,0,10)})
+        local L = Create("Frame", {Parent = F, BackgroundColor3 = Library.Theme.Divider, Size = UDim2.new(1, -20, 0, 1), Position = UDim2.new(0, 10, 0.5, 0)})
+        return F
+    end
+
+    function Funcs:Space(pixels)
+        local F = Create("Frame", {Parent = PageInstance, BackgroundTransparency = 1, Size = UDim2.new(1,0,0, pixels or 20)})
+        return F
+    end
+
+    --// NEW ELEMENTS (Fun & Useful)
+    
+    function Funcs:AddLabel(Text, Color)
+        local F = AddElementFrame(25)
+        F.BackgroundTransparency = 1
+        Create("TextLabel", {Parent = F, BackgroundTransparency = 1, Size = UDim2.new(1, 0, 1, 0), Position = UDim2.new(0, 10, 0, 0), Text = Text, Font = Enum.Font.GothamBold, TextColor3 = Color or Library.Theme.Text, TextSize = 13, TextXAlignment = Enum.TextXAlignment.Left})
+        return F
+    end
+    
+    function Funcs:AddStatusLabel(Text, Status) -- Green/Red dot
+        local F = AddElementFrame(30)
+        local Dot = Create("Frame", {Parent = F, BackgroundColor3 = Status and Library.Theme.Green or Library.Theme.Red, Size = UDim2.new(0,10,0,10), Position = UDim2.new(0,10,0.5,-5)}); Create("UICorner", {Parent = Dot, CornerRadius = UDim.new(1,0)})
+        Create("TextLabel", {Parent = F, BackgroundTransparency = 1, Size = UDim2.new(1, -30, 1, 0), Position = UDim2.new(0, 25, 0, 0), Text = Text, Font = Enum.Font.Gotham, TextColor3 = Library.Theme.Text, TextSize = 13, TextXAlignment = Enum.TextXAlignment.Left})
+        local Obj = {}; AddAPI(Obj, F, {}); function Obj:SetStatus(s) Dot.BackgroundColor3 = s and Library.Theme.Green or Library.Theme.Red end; return Obj
+    end
+
+    function Funcs:AddProgressBar(Config)
+        local F = AddElementFrame(40)
+        Create("TextLabel", {Parent = F, BackgroundTransparency = 1, Position = UDim2.new(0, 10, 0, 5), Size = UDim2.new(1, -20, 0, 15), Text = Config.Text or "Progress", Font = Enum.Font.Gotham, TextColor3 = Library.Theme.Text, TextSize = 12, TextXAlignment = Enum.TextXAlignment.Left})
+        local Bar = Create("Frame", {Parent = F, BackgroundColor3 = Library.Theme.Section, Position = UDim2.new(0, 10, 0, 25), Size = UDim2.new(1, -20, 0, 6)}); Create("UICorner", {Parent = Bar, CornerRadius = UDim.new(1,0)})
+        local Fill = Create("Frame", {Parent = Bar, BackgroundColor3 = Library.Theme.Gradient1, Size = UDim2.new(Config.Default or 0, 0, 1, 0)}); Create("UICorner", {Parent = Fill, CornerRadius = UDim.new(1,0)}); ApplyGradient(Fill)
+        local Obj = {}; AddAPI(Obj, F, Config)
+        function Obj:Set(val) TweenService:Create(Fill, TweenInfo.new(0.3), {Size = UDim2.new(math.clamp(val,0,1), 0, 1, 0)}):Play() end
+        return Obj
+    end
+
+    function Funcs:AddAudioPlayer(Config)
+        local F = AddElementFrame(50)
+        local Sound = Instance.new("Sound", F); Sound.SoundId = "rbxassetid://"..(Config.SoundId or "0"); Sound.Volume = 1
+        local Icon = Create("ImageButton", {Parent = F, BackgroundTransparency = 1, Position = UDim2.new(0, 10, 0.5, -15), Size = UDim2.new(0, 30, 0, 30), Image = "rbxassetid://6031094670", ImageColor3 = Library.Theme.Gradient1}) -- Play Icon
+        local Title = Create("TextLabel", {Parent = F, BackgroundTransparency = 1, Position = UDim2.new(0, 50, 0, 5), Size = UDim2.new(1, -60, 0, 20), Text = Config.Title or "Audio", Font = Enum.Font.GothamBold, TextColor3 = Library.Theme.Text, TextSize = 13, TextXAlignment = Enum.TextXAlignment.Left})
+        local Time = Create("TextLabel", {Parent = F, BackgroundTransparency = 1, Position = UDim2.new(0, 50, 0, 25), Size = UDim2.new(1, -60, 0, 15), Text = "00:00 / 00:00", Font = Enum.Font.Gotham, TextColor3 = Library.Theme.SubText, TextSize = 11, TextXAlignment = Enum.TextXAlignment.Left})
+        
+        local Playing = false
+        Icon.MouseButton1Click:Connect(function()
+            Playing = not Playing
+            if Playing then Sound:Play(); Icon.Image = "rbxassetid://6031094678" -- Pause Icon
+            else Sound:Pause(); Icon.Image = "rbxassetid://6031094670" end
+        end)
+        
+        RunService.RenderStepped:Connect(function()
+            if Sound.IsLoaded then
+                local P, L = Sound.TimePosition, Sound.TimeLength
+                Time.Text = string.format("%d:%02d / %d:%02d", math.floor(P/60), P%60, math.floor(L/60), L%60)
+            end
+        end)
+        local Obj = {}; AddAPI(Obj, F, Config); function Obj:SetId(id) Sound.SoundId = "rbxassetid://"..id end; return Obj
+    end
+
+    function Funcs:AddImage(Config)
+        local F = Create("Frame", {Parent = PageInstance, BackgroundColor3 = Library.Theme.Element, Size = UDim2.new(1, 0, 0, Config.Height or 100)}); Create("UICorner", {Parent = F, CornerRadius = UDim.new(0, 6)})
+        local Img = Create("ImageLabel", {Parent = F, BackgroundTransparency = 1, Size = UDim2.new(1, -10, 1, -10), Position = UDim2.new(0, 5, 0, 5), Image = "rbxassetid://"..Config.Id, ScaleType = Enum.ScaleType.Fit})
+        local Obj = {}; AddAPI(Obj, F, Config); return Obj
+    end
 
     function Funcs:AddButton(Config)
         local BtnFrame = AddElementFrame(36)
@@ -246,6 +324,18 @@ local function RegisterContainerFunctions(Container, PageInstance)
             if Config.Callback then Config.Callback() end
         end)
         local Obj = {}; AddAPI(Obj, BtnFrame, Config); function Obj:SetText(t) Btn.Text = t end; return Obj
+    end
+    
+    function Funcs:AddGitButton(Config) -- Fun extra
+        local F = AddElementFrame(36)
+        local Icon = Create("ImageLabel", {Parent = F, BackgroundTransparency = 1, Size = UDim2.new(0,24,0,24), Position = UDim2.new(0,10,0.5,-12), Image = "rbxassetid://3926305904", ImageColor3 = Library.Theme.Text}) -- Git logo fake
+        local Lbl = Create("TextLabel", {Parent = F, BackgroundTransparency = 1, Position = UDim2.new(0, 40, 0, 0), Size = UDim2.new(1, -40, 1, 0), Text = Config.Text or "Copy GitHub Link", Font = Enum.Font.Gotham, TextColor3 = Library.Theme.Text, TextSize = 13, TextXAlignment = Enum.TextXAlignment.Left})
+        local Btn = Create("TextButton", {Parent = F, BackgroundTransparency = 1, Size = UDim2.new(1,0,1,0), Text = ""})
+        Btn.MouseButton1Click:Connect(function()
+            if setclipboard then setclipboard(Config.Url) end
+            Library:Notify({Title = "GitHub", Content = "Copied to clipboard!", Type = "Success"})
+        end)
+        return F
     end
 
     function Funcs:AddToggle(Config)
@@ -386,40 +476,114 @@ local function RegisterContainerFunctions(Container, PageInstance)
         local LH, RH = {}, {}; RegisterContainerFunctions(LH, L); RegisterContainerFunctions(RH, R); return LH, RH
     end
 
-    -- DRAGGABLE LIST (MOBILE SCROLL LOCK FIXED)
+    -- DRAGGABLE LIST (FIXED: 0.67s Hold + Grow/Float + Numeric Input + Auto-Sort)
     function Funcs:AddDraggableList(Config)
         local F = Create("Frame", {Parent = PageInstance, BackgroundColor3 = Library.Theme.Section, Size = UDim2.new(1, 0, 0, 0), AutomaticSize = Enum.AutomaticSize.Y}); Create("UICorner", {Parent = F, CornerRadius = UDim.new(0, 6)})
         Create("TextLabel", {Parent = F, BackgroundTransparency = 1, Position = UDim2.new(0, 10, 0, 0), Size = UDim2.new(1, -20, 0, 30), Text = Config.Text, Font = Enum.Font.GothamBold, TextColor3 = Library.Theme.Text, TextSize = 13, TextXAlignment = Enum.TextXAlignment.Left})
         local C = Create("Frame", {Parent = F, BackgroundTransparency = 1, Position = UDim2.new(0, 0, 0, 30), Size = UDim2.new(1, 0, 0, 0), AutomaticSize = Enum.AutomaticSize.Y}); Create("UIPadding", {Parent = C, PaddingLeft = UDim.new(0,10), PaddingRight = UDim.new(0,10), PaddingBottom = UDim.new(0,10)})
         Create("UIListLayout", {Parent = C, SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 5)})
+        
         local Buttons = {}
+        
+        -- Helper to trigger callback
+        local function FireCallback()
+            if Config.Callback then
+                local Sorted = {}
+                for _, btn in pairs(Buttons) do table.insert(Sorted, btn) end
+                table.sort(Sorted, function(a,b) return a.LayoutOrder < b.LayoutOrder end)
+                local NewOrder = {}
+                for _, btn in pairs(Sorted) do table.insert(NewOrder, btn.Name) end
+                Config.Callback(NewOrder)
+            end
+        end
+
         local function Refresh()
             for _, v in pairs(C:GetChildren()) do if v:IsA("Frame") then v:Destroy() end end; Buttons = {}
             for i, item in ipairs(Config.Items or {}) do
                 local IF = Create("Frame", {Name = item, Parent = C, BackgroundColor3 = Library.Theme.Element, Size = UDim2.new(1, 0, 0, 36), LayoutOrder = i, ZIndex = 1}); Create("UICorner", {Parent = IF, CornerRadius = UDim.new(0, 4)})
-                Create("TextLabel", {Parent = IF, BackgroundTransparency = 1, Size = UDim2.new(1, -40, 1, 0), Position = UDim2.new(0, 10, 0, 0), Text = item, Font = Enum.Font.Gotham, TextColor3 = Library.Theme.SubText, TextSize = 12, TextXAlignment = Enum.TextXAlignment.Left})
+                
+                -- Numeric Rank Box
+                local RankBox = Create("TextBox", {Parent = IF, BackgroundColor3 = Library.Theme.Section, Position = UDim2.new(0, 5, 0.5, -10), Size = UDim2.new(0, 24, 0, 20), Text = tostring(i), Font = Enum.Font.Gotham, TextColor3 = Library.Theme.SubText, TextSize = 11}); Create("UICorner", {Parent = RankBox, CornerRadius = UDim.new(0, 4)})
+                
+                Create("TextLabel", {Parent = IF, BackgroundTransparency = 1, Size = UDim2.new(1, -65, 1, 0), Position = UDim2.new(0, 35, 0, 0), Text = item, Font = Enum.Font.Gotham, TextColor3 = Library.Theme.SubText, TextSize = 12, TextXAlignment = Enum.TextXAlignment.Left})
                 local Grip = Create("ImageButton", {Parent = IF, BackgroundTransparency = 1, Position = UDim2.new(1, -30, 0.5, -12), Size = UDim2.new(0, 24, 0, 24), Image = "rbxassetid://6034818372", ImageColor3 = Library.Theme.SubText, Rotation = 90})
                 
-                -- MOBILE FIX LOGIC: DISABLE SCROLLING WHEN DRAGGING
-                local Dragging = false
-                Grip.InputBegan:Connect(function(input)
-                    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                        Dragging = true
-                        IF.BackgroundColor3 = Library.Theme.Gradient1; IF.ZIndex = 5
-                        if PageInstance:IsA("ScrollingFrame") then PageInstance.ScrollingEnabled = false end -- SCROLL LOCK
-                        input.Changed:Connect(function() if input.UserInputState == Enum.UserInputState.End then
-                            Dragging = false; IF.BackgroundColor3 = Library.Theme.Element; IF.ZIndex = 1
-                            if PageInstance:IsA("ScrollingFrame") then PageInstance.ScrollingEnabled = true end -- UNLOCK
-                            if Config.Callback then
-                                local NewOrder = {}; local Sorted = {}
-                                for _, btn in pairs(Buttons) do table.insert(Sorted, btn) end
-                                table.sort(Sorted, function(a,b) return a.LayoutOrder < b.LayoutOrder end)
-                                for _, btn in pairs(Sorted) do table.insert(NewOrder, btn.Name) end
-                                Config.Callback(NewOrder)
-                            end
-                        end end)
+                -- Manual Rank Logic
+                RankBox.FocusLost:Connect(function()
+                    local n = tonumber(RankBox.Text)
+                    if n then
+                        n = math.clamp(math.floor(n), 1, #Buttons)
+                        -- Reorder Logic
+                        local Old = IF.LayoutOrder
+                        if n ~= Old then
+                             -- Shift others
+                             for _, other in pairs(Buttons) do
+                                 if other ~= IF then
+                                    if Old < n then -- Moving down
+                                        if other.LayoutOrder > Old and other.LayoutOrder <= n then
+                                            other.LayoutOrder = other.LayoutOrder - 1
+                                            other.TextBox.Text = tostring(other.LayoutOrder)
+                                        end
+                                    else -- Moving up
+                                        if other.LayoutOrder >= n and other.LayoutOrder < Old then
+                                            other.LayoutOrder = other.LayoutOrder + 1
+                                            other.TextBox.Text = tostring(other.LayoutOrder)
+                                        end
+                                    end
+                                 end
+                             end
+                             IF.LayoutOrder = n
+                             RankBox.Text = tostring(n)
+                             FireCallback()
+                        end
+                    else
+                        RankBox.Text = tostring(IF.LayoutOrder)
                     end
                 end)
+
+                -- Drag Logic with 0.67s Hold
+                local Dragging = false
+                local HoldStart = 0
+                local Holding = false
+                
+                Grip.InputBegan:Connect(function(input)
+                    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                        Holding = true
+                        HoldStart = tick()
+                        
+                        -- Wait loop
+                        task.spawn(function()
+                            while Holding do
+                                if tick() - HoldStart >= 0.67 then
+                                    Dragging = true
+                                    -- Float & Grow Effect
+                                    IF.ZIndex = 10
+                                    TweenService:Create(IF, TweenInfo.new(0.2), {Size = UDim2.new(1.05, 0, 0, 40), BackgroundColor3 = Library.Theme.Gradient1}):Play()
+                                    if PageInstance:IsA("ScrollingFrame") then PageInstance.ScrollingEnabled = false end
+                                    break
+                                end
+                                task.wait(0.1)
+                            end
+                        end)
+                        
+                        input.Changed:Connect(function() 
+                            if input.UserInputState == Enum.UserInputState.End then
+                                Holding = false
+                                if Dragging then
+                                    Dragging = false
+                                    -- Reset Visuals
+                                    IF.ZIndex = 1
+                                    TweenService:Create(IF, TweenInfo.new(0.2), {Size = UDim2.new(1, 0, 0, 36), BackgroundColor3 = Library.Theme.Element}):Play()
+                                    if PageInstance:IsA("ScrollingFrame") then PageInstance.ScrollingEnabled = true end
+                                    FireCallback()
+                                    -- Refresh numbers
+                                    for _, btn in pairs(Buttons) do btn.TextBox.Text = tostring(btn.LayoutOrder) end
+                                end
+                            end 
+                        end)
+                    end
+                end)
+                
                 Grip.InputChanged:Connect(function(input)
                     if Dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
                         local CY = input.Position.Y
@@ -428,6 +592,9 @@ local function RegisterContainerFunctions(Container, PageInstance)
                                 local OY = other.AbsolutePosition.Y
                                 if CY > OY and CY < (OY + other.AbsoluteSize.Y) then
                                     local t = IF.LayoutOrder; IF.LayoutOrder = other.LayoutOrder; other.LayoutOrder = t
+                                    -- Update visual numbers immediately for feedback
+                                    RankBox.Text = tostring(IF.LayoutOrder)
+                                    other.TextBox.Text = tostring(other.LayoutOrder)
                                 end
                             end
                         end
@@ -440,7 +607,6 @@ local function RegisterContainerFunctions(Container, PageInstance)
         local Obj = {}; AddAPI(Obj, F, Config); function Obj:Set(i) Config.Items = i; Refresh() end; return Obj
     end
 
-    -- NEW ELEMENTS (V10 ADDITIONS)
     function Funcs:AddKnob(Config) -- Radial Slider
         local Min, Max, Def = Config.Min, Config.Max, Config.Default or Config.Min
         local F = AddElementFrame(80)
@@ -495,7 +661,6 @@ local function RegisterContainerFunctions(Container, PageInstance)
         local Obj = {}; AddAPI(Obj, F, Config); return Obj
     end
 
-    -- OTHER BASIC FUNCTIONS (Restored)
     function Funcs:AddParagraph(Config)
         local F = Create("Frame", {Parent = PageInstance, BackgroundColor3 = Library.Theme.Section, Size = UDim2.new(1, 0, 0, 0), AutomaticSize = Enum.AutomaticSize.Y}); Create("UICorner", {Parent = F, CornerRadius = UDim.new(0, 6)}); Create("UIPadding", {Parent = F, PaddingTop = UDim.new(0, 10), PaddingBottom = UDim.new(0, 10), PaddingLeft = UDim.new(0, 10), PaddingRight = UDim.new(0, 10)})
         Create("TextLabel", {Parent = F, BackgroundTransparency = 1, Size = UDim2.new(1,0,0,20), Font = Enum.Font.GothamBold, Text = Config.Title, TextColor3 = Library.Theme.Text, TextSize = 14, TextXAlignment = Enum.TextXAlignment.Left})
@@ -536,7 +701,7 @@ end
 --// MAIN WINDOW CREATION
 function Library:CreateWindow(Config)
     if Library.ScreenGuiRef then Library.ScreenGuiRef:Destroy() end
-    local Gui = Create("ScreenGui", {Name = "ModernUI_V10", Parent = CoreGui, ZIndexBehavior = Enum.ZIndexBehavior.Sibling})
+    local Gui = Create("ScreenGui", {Name = "ModernUI_V11", Parent = CoreGui, ZIndexBehavior = Enum.ZIndexBehavior.Sibling})
     Library.ScreenGuiRef = Gui
     Library:InitNotifications(Gui)
     Library:InitMinimize(Gui) -- V10
@@ -568,7 +733,7 @@ function Library:CreateWindow(Config)
     local Profile = Create("Frame", {Parent = Sidebar, BackgroundColor3 = Library.Theme.Background, Position = UDim2.new(0, 0, 1, -50), Size = UDim2.new(1, 0, 0, 50), BorderSizePixel = 0})
     local Avatar = Create("ImageLabel", {Parent = Profile, BackgroundTransparency = 1, Position = UDim2.new(0, 10, 0.5, -15), Size = UDim2.new(0, 30, 0, 30), Image = Players:GetUserThumbnailAsync(LocalPlayer.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size48x48)}); Create("UICorner", {Parent = Avatar, CornerRadius = UDim.new(1, 0)})
     Create("TextLabel", {Parent = Profile, BackgroundTransparency = 1, Position = UDim2.new(0, 50, 0, 2), Size = UDim2.new(0, 80, 0, 20), Font = Enum.Font.GothamBold, Text = LocalPlayer.Name, TextColor3 = Library.Theme.Text, TextSize = 12, TextXAlignment = Enum.TextXAlignment.Left})
-    Create("TextLabel", {Parent = Profile, BackgroundTransparency = 1, Position = UDim2.new(0, 50, 0, 20), Size = UDim2.new(0, 80, 0, 15), Font = Enum.Font.Gotham, Text = "V10 ULTIMATE", TextColor3 = Library.Theme.Gradient1, TextSize = 10, TextXAlignment = Enum.TextXAlignment.Left})
+    Create("TextLabel", {Parent = Profile, BackgroundTransparency = 1, Position = UDim2.new(0, 50, 0, 20), Size = UDim2.new(0, 80, 0, 15), Font = Enum.Font.Gotham, Text = Library.Version, TextColor3 = Library.Theme.Gradient1, TextSize = 10, TextXAlignment = Enum.TextXAlignment.Left})
 
     -- SETTINGS BUTTON & PAGE (RESTORED)
     local SettingsBtn = Create("TextButton", {Parent = Profile, BackgroundTransparency = 1, Size = UDim2.new(0, 25, 0, 25), Position = UDim2.new(1, -30, 0.5, -12.5), Text = ""}); Create("ImageLabel", {Parent = SettingsBtn, BackgroundTransparency = 1, Size = UDim2.new(1, 0, 1, 0), Image = "rbxassetid://6031280882", ImageColor3 = Library.Theme.SubText})
@@ -606,7 +771,7 @@ function Library:CreateWindow(Config)
         if v then task.spawn(function() while v do local h=tick()%5/5; Library.Theme.Gradient1=Color3.fromHSV(h,1,1); Library.Theme.Gradient2=Color3.fromHSV(h+.5,1,1); if Grad then Grad.Color=ColorSequence.new{ColorSequenceKeypoint.new(0,Library.Theme.Background),ColorSequenceKeypoint.new(1,Library.Theme.Background2)} end; task.wait() end end) else Library:SetTheme(Library.CurrentTheme) end
     end})
     SettingsHandler:AddSlider({Text = "Transparency", Min = 0, Max = 100, Default = 0, Callback = function(v) Main.BackgroundTransparency = v/100 end})
-   -- SettingsHandler:Divide()
+    SettingsHandler:Divide()
     SettingsHandler:AddButton({Text = "Save Config", Callback = function() Library:SaveConfig() end})
     SettingsHandler:AddButton({Text = "Load Config", Callback = function() Library:LoadConfig() end})
     SettingsHandler:AddKeybind({Text = "Menu Keybind", Default = Enum.KeyCode.RightControl, Callback = function(k) Library.Keybind = k end})
