@@ -606,7 +606,7 @@ function Library:CreateWindow(Config)
         if v then task.spawn(function() while v do local h=tick()%5/5; Library.Theme.Gradient1=Color3.fromHSV(h,1,1); Library.Theme.Gradient2=Color3.fromHSV(h+.5,1,1); if Grad then Grad.Color=ColorSequence.new{ColorSequenceKeypoint.new(0,Library.Theme.Background),ColorSequenceKeypoint.new(1,Library.Theme.Background2)} end; task.wait() end end) else Library:SetTheme(Library.CurrentTheme) end
     end})
     SettingsHandler:AddSlider({Text = "Transparency", Min = 0, Max = 100, Default = 0, Callback = function(v) Main.BackgroundTransparency = v/100 end})
-    SettingsHandler:Divide()
+   -- SettingsHandler:Divide()
     SettingsHandler:AddButton({Text = "Save Config", Callback = function() Library:SaveConfig() end})
     SettingsHandler:AddButton({Text = "Load Config", Callback = function() Library:LoadConfig() end})
     SettingsHandler:AddKeybind({Text = "Menu Keybind", Default = Enum.KeyCode.RightControl, Callback = function(k) Library.Keybind = k end})
