@@ -19,11 +19,12 @@ local Ascent = {
     MinimizeBtnRef = nil,
     ScreenGuiRef = nil,
     ScaleObj = nil,
+    PageHolderRef = nil, -- Added reference for PageHolder
     Keybind = Enum.KeyCode.RightControl,
     IsVisible = true,
     Flags = {},
     ConfigFolder = "AscentLib_Configs",
-    Version = "1.5 Updated",
+    Version = "1.6 Updated",
     SettingsMenu = nil -- Reference for the user settings
 }
 
@@ -315,8 +316,10 @@ local function RegisterContainerFunctions(Container, PageInstance)
             local ExtBtn = Create("ImageButton", {
                 Parent = F, BackgroundTransparency = 1,
                 Position = UDim2.new(1, -85, 0.5, -10), Size = UDim2.new(0, 20, 0, 20),
-                Image = "rbxassetid://3944686274", ImageColor3 = Ascent.Theme.SubText, -- Gears Icon
-                AutoButtonColor = false
+                Image = "rbxassetid://3944686274", -- Gears Icon
+                ImageColor3 = Ascent.Theme.Text, -- Changed to Text color for better visibility
+                AutoButtonColor = false,
+                ZIndex = 5 -- Fix for icon not showing
             })
             
             local ExtFrame
@@ -339,8 +342,9 @@ local function RegisterContainerFunctions(Container, PageInstance)
                 Close.MouseButton1Click:Connect(function() ExtFrame.Visible = false end)
             else
                 -- PAGE BASED VARIANTS (Full or Side)
-                local PageHolder = PageInstance.Parent
-                if not PageHolder then return {} end
+                -- FIX: Use PageHolder instead of immediate parent to escape Sections/Containers
+                local TargetParent = Ascent.PageHolderRef or PageInstance.Parent 
+                -- Fallback to PageInstance.Parent only if global ref missing, but usually Ref is set.
                 
                 local width = UDim2.new(1, 0, 1, 0)
                 local startPos = UDim2.new(1, 0, 0, 0)
@@ -351,7 +355,7 @@ local function RegisterContainerFunctions(Container, PageInstance)
                 end
 
                 ExtFrame = Create("Frame", {
-                    Name = "Extension", Parent = PageHolder,
+                    Name = "Extension", Parent = TargetParent, -- Parenting to Main Page Holder
                     BackgroundColor3 = Ascent.Theme.Background,
                     Position = startPos, Size = width,
                     ZIndex = 50 -- On top
@@ -360,7 +364,7 @@ local function RegisterContainerFunctions(Container, PageInstance)
                 if ExtVariant == "Side" then
                     -- Align right
                     ExtFrame.AnchorPoint = Vector2.new(1, 0)
-                    ExtFrame.Position = UDim2.new(1, 0, 0, 0) -- Hidden off screen? No, animate in.
+                    ExtFrame.Position = UDim2.new(1, 0, 0, 0) 
                     -- Initial state hidden:
                     ExtFrame.Position = UDim2.new(2, 0, 0, 0) 
                 end
@@ -393,6 +397,9 @@ local function RegisterContainerFunctions(Container, PageInstance)
 
             ExtBtn.MouseButton1Click:Connect(function()
                 ExtFrame.Visible = true
+                -- Ensure it's on top if it was hidden
+                ExtFrame.Parent.Parent.Visible = true -- Main frame logic
+                
                 if ExtVariant == "Popup" then
                     -- Just show
                 elseif ExtVariant == "Side" then
@@ -414,20 +421,49 @@ local function RegisterContainerFunctions(Container, PageInstance)
         local Min, Max, Def = Config.Min, Config.Max, Config.Default or Config.Min; if Config.Flag then Ascent.Flags[Config.Flag] = Def end
         local F = AddElementFrame(50)
         Create("TextLabel", {Parent = F, BackgroundTransparency = 1, Position = UDim2.new(0, 12, 0, 5), Size = UDim2.new(1, -50, 0, 20), Text = Config.Text, Font = Enum.Font.GothamMedium, TextColor3 = Ascent.Theme.Text, TextSize = 13, TextXAlignment = Enum.TextXAlignment.Left})
-        local VLab = Create("TextLabel", {Parent = F, BackgroundTransparency = 1, Position = UDim2.new(1, -50, 0, 5), Size = UDim2.new(0, 40, 0, 20), Text = tostring(Def), Font = Enum.Font.Gotham, TextColor3 = Ascent.Theme.SubText, TextSize = 12, TextXAlignment = Enum.TextXAlignment.Right})
+        
+        -- UPDATED: Numeric Box Input for Slider
+        local VBox = Create("TextBox", {
+            Parent = F, BackgroundTransparency = 1, 
+            Position = UDim2.new(1, -50, 0, 5), Size = UDim2.new(0, 40, 0, 20), 
+            Text = tostring(Def), Font = Enum.Font.Gotham, 
+            TextColor3 = Ascent.Theme.SubText, TextSize = 12, 
+            TextXAlignment = Enum.TextXAlignment.Right, 
+            ClearTextOnFocus = false,
+            PlaceholderText = "#"
+        })
+        
         local Bg = Create("Frame", {Parent = F, BackgroundColor3 = Ascent.Theme.Divider, Position = UDim2.new(0, 12, 0, 35), Size = UDim2.new(1, -24, 0, 4)}); Create("UICorner", {Parent = Bg, CornerRadius = UDim.new(1, 0)})
         local Fill = Create("Frame", {Parent = Bg, BackgroundColor3 = Ascent.Theme.Accent, Size = UDim2.new((Def-Min)/(Max-Min), 0, 1, 0)}); Create("UICorner", {Parent = Fill, CornerRadius = UDim.new(1, 0)})
         local Knob = Create("Frame", {Parent = Fill, BackgroundColor3 = Color3.new(1,1,1), Position = UDim2.new(1, -6, 0.5, -6), Size = UDim2.new(0, 12, 0, 12), ZIndex = 2}); Create("UICorner", {Parent = Knob, CornerRadius = UDim.new(1, 0)}); AddShadow(Knob, 0.8)
+        
         local Btn = Create("TextButton", {Parent = F, BackgroundTransparency = 1, Position = UDim2.new(0,0,0,25), Size = UDim2.new(1,0,0,25), Text = ""})
-        local Drag, Update = false, function(i)
-            local s = math.clamp((i.Position.X - Bg.AbsolutePosition.X) / Bg.AbsoluteSize.X, 0, 1); local res = math.floor(Min + (s * (Max - Min)))
-            TweenService:Create(Fill, TweenInfo.new(0.05), {Size = UDim2.new((res-Min)/(Max-Min), 0, 1, 0)}):Play(); VLab.Text = tostring(res)
-            if Config.Flag then Ascent.Flags[Config.Flag] = res end; if Config.Callback then Config.Callback(res) end
+        
+        local function SetVal(v)
+            local clamped = math.clamp(v, Min, Max)
+            local percent = (clamped - Min) / (Max - Min)
+            TweenService:Create(Fill, TweenInfo.new(0.05), {Size = UDim2.new(percent, 0, 1, 0)}):Play()
+            VBox.Text = tostring(clamped)
+            if Config.Flag then Ascent.Flags[Config.Flag] = clamped end
+            if Config.Callback then Config.Callback(clamped) end
         end
+
+        local Drag, Update = false, function(i)
+            local s = math.clamp((i.Position.X - Bg.AbsolutePosition.X) / Bg.AbsoluteSize.X, 0, 1)
+            local res = math.floor(Min + (s * (Max - Min)))
+            SetVal(res)
+        end
+
         Btn.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then Drag = true; Update(i) end end)
         UserInputService.InputEnded:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then Drag = false end end)
         UserInputService.InputChanged:Connect(function(i) if Drag and (i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch) then Update(i) end end)
-        local Obj = {}; AddAPI(Obj, F, Config); function Obj:Set(v) Fill.Size = UDim2.new((v-Min)/(Max-Min),0,1,0); VLab.Text = tostring(v) end; return Obj
+        
+        VBox.FocusLost:Connect(function()
+            local n = tonumber(VBox.Text)
+            if n then SetVal(n) else VBox.Text = tostring(Ascent.Flags[Config.Flag] or Def) end
+        end)
+
+        local Obj = {}; AddAPI(Obj, F, Config); function Obj:Set(v) SetVal(v) end; return Obj
     end
 
     function Funcs:AddDropdown(Config)
@@ -529,6 +565,7 @@ function Ascent:CreateWindow(Config)
     Create("TextLabel", {Parent = Sidebar, BackgroundTransparency = 1, Position = UDim2.new(0, 20, 0, 50), Size = UDim2.new(1, -20, 0, 30), Text = Config.Title or "Ascent Lib", Font = Enum.Font.GothamBold, TextColor3 = Ascent.Theme.Text, TextSize = 18, TextXAlignment = Enum.TextXAlignment.Left})
     local TabHolder = Create("ScrollingFrame", {Parent = Sidebar, BackgroundTransparency = 1, Position = UDim2.new(0, 10, 0, 90), Size = UDim2.new(1, -20, 1, -140), CanvasSize = UDim2.new(0,0,0,0), AutomaticCanvasSize = Enum.AutomaticSize.Y, ScrollBarThickness = 0}); Create("UIListLayout", {Parent = TabHolder, SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 5)})
     local PageHolder = Create("Frame", {Name = "PageHolder", Parent = Main, BackgroundTransparency = 1, Position = UDim2.new(0, 200, 0, 0), Size = UDim2.new(1, -200, 1, 0), ClipsDescendants = true})
+    Ascent.PageHolderRef = PageHolder -- Storing reference to fix Extends logic
     
     -- FOOTER / USER SETTINGS
     local Footer = Create("Frame", {Parent = Sidebar, BackgroundTransparency = 1, Position = UDim2.new(0, 0, 1, -50), Size = UDim2.new(1, 0, 0, 50)}); Create("Frame", {Parent = Footer, BackgroundColor3 = Ascent.Theme.Divider, Size = UDim2.new(1, -40, 0, 1), Position = UDim2.new(0, 20, 0, 0)})
@@ -539,26 +576,25 @@ function Ascent:CreateWindow(Config)
     local SettingGear = Create("ImageButton", {Parent = Footer, BackgroundTransparency = 1, Position = UDim2.new(1, -45, 0.5, -8), Size = UDim2.new(0, 16, 0, 16), Image = "rbxassetid://3944686274", ImageColor3 = Ascent.Theme.SubText}) -- Gear
     local SettingArrow = Create("ImageButton", {Parent = Footer, BackgroundTransparency = 1, Position = UDim2.new(1, -25, 0.5, -8), Size = UDim2.new(0, 16, 0, 16), Image = "rbxassetid://6034818372", ImageColor3 = Ascent.Theme.SubText}) -- Arrow
     
-    local UserSettingsFrame = Create("Frame", {
-        Parent = Main, BackgroundColor3 = Ascent.Theme.Background, BackgroundTransparency = 0.05,
-        Position = UDim2.new(0, 10, 1, -180), Size = UDim2.new(0, 180, 0, 120),
-        Visible = false, ZIndex = 20
-    }); Create("UICorner", {Parent = UserSettingsFrame, CornerRadius = UDim.new(0, 8)}); AddShadow(UserSettingsFrame, 0.5)
-    Create("UIListLayout", {Parent = UserSettingsFrame, SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 5)}); Create("UIPadding", {Parent = UserSettingsFrame, PaddingTop = UDim.new(0,10), PaddingLeft = UDim.new(0,10)})
+    -- UPDATED: SETTINGS AS A PAGE
+    local SettingsPage = Create("ScrollingFrame", {
+        Name = "SettingsPage", Parent = PageHolder, 
+        BackgroundTransparency = 1, Size = UDim2.new(1, 0, 1, 0), 
+        Visible = false, CanvasSize = UDim2.new(0,0,0,0), AutomaticCanvasSize = Enum.AutomaticSize.Y, 
+        ScrollBarThickness = 4, ScrollBarImageColor3 = Ascent.Theme.Divider
+    }); Create("UIListLayout", {Parent = SettingsPage, SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 10)}); Create("UIPadding", {Parent = SettingsPage, PaddingTop = UDim.new(0, 20), PaddingLeft = UDim.new(0, 20), PaddingRight = UDim.new(0, 20), PaddingBottom = UDim.new(0, 20)})
     
-    local function AddUserSettingBtn(Text, Callback)
-        local B = Create("TextButton", {Parent = UserSettingsFrame, BackgroundTransparency = 1, Size = UDim2.new(1,-20,0,25), Text = Text, TextXAlignment = Enum.TextXAlignment.Left, Font = Enum.Font.GothamMedium, TextColor3 = Ascent.Theme.Text, TextSize = 12})
-        B.MouseButton1Click:Connect(Callback)
-    end
+    local SettingsAPI = {}; RegisterContainerFunctions(SettingsAPI, SettingsPage)
     
-    AddUserSettingBtn("Anonymous Mode", function()
-        if UsernameLab.Text == "Hidden User" then UsernameLab.Text = LocalPlayer.Name; Av.Visible = true else UsernameLab.Text = "Hidden User"; Av.Visible = false end
-    end)
-    AddUserSettingBtn("Rejoin Server", function()
-        TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, LocalPlayer)
-    end)
-    AddUserSettingBtn("Server Hop", function()
-         -- Simple placeholder for server hop as full logic requires HTTP or complex Teleport
+    -- Add Default Settings Elements
+    SettingsAPI:AddLabel("User Settings")
+    SettingsAPI:AddButton({Text = "Anonymous Mode", Callback = function()
+         if UsernameLab.Text == "Hidden User" then UsernameLab.Text = LocalPlayer.Name; Av.Visible = true else UsernameLab.Text = "Hidden User"; Av.Visible = false end
+    end})
+    SettingsAPI:AddButton({Text = "Rejoin Server", Callback = function()
+         TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, LocalPlayer)
+    end})
+    SettingsAPI:AddButton({Text = "Server Hop", Callback = function()
         Ascent:Notify({Title = "Server Hop", Content = "Searching for server...", Duration = 2})
         local x = {}
         for _, v in ipairs(game:GetService("HttpService"):JSONDecode(game:HttpGetAsync("https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Asc&limit=100")).data) do
@@ -571,14 +607,21 @@ function Ascent:CreateWindow(Config)
         else
             Ascent:Notify({Title = "Server Hop", Content = "No other servers found.", Type = "Error"})
         end
-    end)
+    end})
 
-    local USettingsOpen = false
-    SettingArrow.MouseButton1Click:Connect(function()
-        USettingsOpen = not USettingsOpen
-        TweenService:Create(SettingArrow, TweenInfo.new(0.3), {Rotation = USettingsOpen and 180 or 0}):Play()
-        UserSettingsFrame.Visible = USettingsOpen
-    end)
+    local function OpenSettings()
+        for _, v in pairs(TabHolder:GetDescendants()) do 
+            if v:IsA("TextButton") and v.Parent == TabHolder then 
+                TweenService:Create(v, TweenInfo.new(0.2), {BackgroundColor3 = Ascent.Theme.Sidebar, TextColor3 = Ascent.Theme.SubText}):Play()
+                if v:FindFirstChild("ImageLabel") then TweenService:Create(v.ImageLabel, TweenInfo.new(0.2), {ImageColor3 = Ascent.Theme.SubText}):Play() end 
+            end 
+        end
+        for _, v in pairs(PageHolder:GetChildren()) do v.Visible = false end
+        SettingsPage.Visible = true
+    end
+
+    SettingGear.MouseButton1Click:Connect(OpenSettings)
+    SettingArrow.MouseButton1Click:Connect(OpenSettings)
 
     MakeDraggable(Sidebar, Main)
 
