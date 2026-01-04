@@ -18,17 +18,18 @@ local Ascent = {
     MainFrameRef = nil,
     MinimizeBtnRef = nil,
     ScreenGuiRef = nil,
-    ScaleObj = nil,
-    ActiveExtension = nil, -- Tracks currently open extension
-    BlurRef = nil, -- Reference to Lighting Blur
+    ScaleObj = nil, 
+    ActiveExtension = nil, 
+    BlurRef = nil, 
     Keybind = Enum.KeyCode.RightControl,
     IsVisible = true,
     Flags = {},
     ConfigFolder = "AscentLib_Configs",
-    Version = "1.3 Ultimate"
+    Version = "1.3.1 Fix",
+    ElementCount = 0 -- Added counter for unique IDs
 }
 
---// THEME SYSTEM (Refined macOS Palette)
+--// THEME SYSTEM
 Ascent.Themes = {
     MacDark = {
         Background = Color3.fromRGB(30, 30, 35),
@@ -95,7 +96,6 @@ local function CreateRipple(Parent)
     end)
 end
 
---// MOBILE SUPPORTED DRAG
 local function MakeDraggable(topbar, object)
     local Dragging, DragInput, DragStart, StartPos
     local function Update(input)
@@ -113,7 +113,6 @@ local function MakeDraggable(topbar, object)
     UserInputService.InputChanged:Connect(function(input) if input == DragInput and Dragging then Update(input) end end)
 end
 
---// GLOBAL API
 function Ascent:SetTheme(ThemeName)
     if Ascent.Themes[ThemeName] then 
         Ascent.Theme = Ascent.Themes[ThemeName]
@@ -135,11 +134,10 @@ end
 
 function Ascent:ToggleBlur(state)
     if Ascent.BlurRef then
-        TweenService:Create(Ascent.BlurRef, TweenInfo.new(0.5), {Size = state and 24 or 0}):Play()
+        TweenService:Create(Ascent.BlurRef, TweenInfo.new(0.5), {Size = state and 18 or 0}):Play()
     end
 end
 
---// NOTIFICATIONS
 function Ascent:Notify(Config)
     Config = Config or {}
     local Frame = Create("Frame", {Parent = Ascent.NotificationArea, BackgroundColor3 = Ascent.Theme.Background, Size = UDim2.new(1, 0, 0, 0), ClipsDescendants = true, BorderSizePixel = 0})
@@ -165,7 +163,6 @@ function Ascent:InitNotifications(Gui)
     Create("UIListLayout", {Parent = Ascent.NotificationArea, SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 10), VerticalAlignment = Enum.VerticalAlignment.Bottom})
 end
 
---// MINIMIZE / MOBILE TOGGLE
 function Ascent:InitMinimize(Gui)
     local Btn = Create("ImageButton", {Name = "Bubble", Parent = Gui, BackgroundColor3 = Ascent.Theme.Background, Position = UDim2.new(0, 50, 0, 50), Size = UDim2.new(0, 55, 0, 55), Visible = false, AutoButtonColor = false})
     Create("UICorner", {Parent = Btn, CornerRadius = UDim.new(1, 0)}); Create("UIStroke", {Parent = Btn, Color = Ascent.Theme.Accent, Thickness = 2}); AddShadow(Btn)
@@ -178,7 +175,6 @@ function Ascent:InitMinimize(Gui)
     Ascent.MinimizeBtnRef = Btn
 end
 
---// TOOLTIPS
 function Ascent:AddTooltip(Element, Text)
     if Ascent.IsMobile then return end
     local Tooltip = Create("Frame", {Parent = Ascent.MainFrameRef.Parent, BackgroundColor3 = Ascent.Theme.Sidebar, Size = UDim2.new(0, 0, 0, 28), AutomaticSize = Enum.AutomaticSize.X, Visible = false, ZIndex = 300})
@@ -189,28 +185,29 @@ function Ascent:AddTooltip(Element, Text)
     Element.MouseMoved:Connect(function() local M = UserInputService:GetMouseLocation(); Tooltip.Position = UDim2.new(0, M.X + 15, 0, M.Y - 25) end)
 end
 
---// FORWARD DECLARATION
-local RegisterContainerFunctions
+--// FORWARD DECLARATION FOR RECURSION
+local RegisterContainerFunctions = nil 
 
---// EXTENSION SYSTEM
+--// EXTENSION SYSTEM (FIXED)
 local function CreateExtensionPanel(ParentElement)
-    -- Close existing extension if any
     if Ascent.ActiveExtension and Ascent.ActiveExtension.Parent then
         local Old = Ascent.ActiveExtension
         TweenService:Create(Old, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {Position = UDim2.new(1, 10, 0, 0)}):Play()
         task.delay(0.3, function() Old.Visible = false end)
     end
 
-    local ExtensionFrame = Ascent.MainFrameRef:FindFirstChild("ExtensionPanel_" .. ParentElement.Name)
+    -- Create Unique Name ID
+    local ExtName = "ExtensionPanel_" .. (ParentElement.Name or "Unknown")
+    local ExtensionFrame = Ascent.MainFrameRef:FindFirstChild(ExtName)
     
     if not ExtensionFrame then
         ExtensionFrame = Create("Frame", {
-            Name = "ExtensionPanel_" .. ParentElement.Name,
+            Name = ExtName,
             Parent = Ascent.MainFrameRef,
             BackgroundColor3 = Ascent.Theme.Sidebar,
-            Position = UDim2.new(1, 10, 0, 0), -- Starts hidden right
+            Position = UDim2.new(1, 10, 0, 0), -- Hidden Right
             Size = UDim2.new(0, 240, 1, 0),
-            ZIndex = 50,
+            ZIndex = 50, -- High ZIndex to sit on top
             Visible = false
         })
         Create("UICorner", {Parent = ExtensionFrame, CornerRadius = UDim.new(0, 12)})
@@ -225,7 +222,7 @@ local function CreateExtensionPanel(ParentElement)
         local Content = Create("ScrollingFrame", {Parent = ExtensionFrame, BackgroundTransparency = 1, Position = UDim2.new(0, 10, 0, 45), Size = UDim2.new(1, -20, 1, -55), CanvasSize = UDim2.new(0,0,0,0), AutomaticCanvasSize = Enum.AutomaticSize.Y, ScrollBarThickness = 2, ScrollBarImageColor3 = Ascent.Theme.Accent})
         Create("UIListLayout", {Parent = Content, SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 8)})
 
-        -- Logic
+        -- API
         local ExtAPI = {}
         RegisterContainerFunctions(ExtAPI, Content)
         
@@ -244,13 +241,13 @@ local function CreateExtensionPanel(ParentElement)
         end
 
         CloseBtn.MouseButton1Click:Connect(function() ExtAPI:Toggle() end)
-        ExtensionFrame:SetAttribute("API", ExtAPI) -- Store reference
+        ExtensionFrame:SetAttribute("API", ExtAPI)
         
-        -- Attach to Parent Element
+        -- Attach Gear Icon
         local GearBtn = Create("ImageButton", {
             Parent = ParentElement,
             Size = UDim2.new(0, 16, 0, 16),
-            Position = UDim2.new(1, -30, 0.5, -8), -- Positioned right
+            Position = UDim2.new(1, -30, 0.5, -8),
             BackgroundTransparency = 1,
             Image = "rbxassetid://6031094678", -- Gear Icon
             ImageColor3 = Ascent.Theme.SubText,
@@ -261,8 +258,6 @@ local function CreateExtensionPanel(ParentElement)
         GearBtn.MouseButton1Click:Connect(function() ExtAPI:Toggle() end)
         return ExtAPI
     else
-        -- Return existing API if already created
-        -- Note: This requires caching, but for simplicity we assume creation once per element call
         return nil 
     end
 end
@@ -277,7 +272,6 @@ local function AddAPI(Obj, Frame, Config)
             Create("ImageLabel", {Parent = Ov, BackgroundTransparency = 1, Size = UDim2.new(0,24,0,24), Position = UDim2.new(0.5,-12,0.5,-12), Image = "rbxassetid://3926305904", ImageColor3 = Color3.new(1,1,1)})
         end
     end
-    -- NEW: Extend API
     function Obj:Extend()
         return CreateExtensionPanel(Frame)
     end
@@ -287,7 +281,10 @@ end
 RegisterContainerFunctions = function(Container, PageInstance)
     local Funcs = {}
     local function AddElementFrame(SizeY)
-        local F = Create("Frame", {Parent = PageInstance, BackgroundColor3 = Ascent.Theme.Element, Size = UDim2.new(1, 0, 0, SizeY), BorderSizePixel = 0})
+        Ascent.ElementCount = Ascent.ElementCount + 1
+        local ID = "Element_" .. tostring(Ascent.ElementCount)
+        
+        local F = Create("Frame", {Name = ID, Parent = PageInstance, BackgroundColor3 = Ascent.Theme.Element, Size = UDim2.new(1, 0, 0, SizeY), BorderSizePixel = 0})
         Create("UICorner", {Parent = F, CornerRadius = UDim.new(0, 8)})
         return F
     end
@@ -426,32 +423,22 @@ function Ascent:CreateWindow(Config)
 
     local Gui = Create("ScreenGui", {Name = "AscentUI", Parent = CoreGui, ZIndexBehavior = Enum.ZIndexBehavior.Sibling}); Ascent.ScreenGuiRef = Gui
     
-    -- SCALE OBJECT
     local ScaleObj = Create("UIScale", {Parent = Gui, Scale = 1})
     Ascent.ScaleObj = ScaleObj
 
-    -- ACRYLIC BLUR SYSTEM
     if Config.Acrylic then
         local Blur = Instance.new("BlurEffect", Lighting)
         Blur.Name = "AscentBlur"
-        Blur.Size = 24
+        Blur.Size = 18
         Ascent.BlurRef = Blur
-        
-        -- Adjust Theme Transparency for Acrylic Look
-        Ascent.Theme.Background = Color3.fromRGB(30, 30, 35) -- Keep color
-        -- We will manually set transparency on the MainFrame below
+        Ascent.Theme.Background = Color3.fromRGB(30, 30, 35) 
     end
 
     Ascent:InitNotifications(Gui); Ascent:InitMinimize(Gui)
 
     local Main = Create("Frame", {Name = "MainFrame", Parent = Gui, BackgroundColor3 = Ascent.Theme.Background, Position = UDim2.fromScale(0.5, 0.5), AnchorPoint = Vector2.new(0.5, 0.5), Size = Config.Size or UDim2.fromOffset(750, 500), ClipsDescendants = false}); Create("UICorner", {Parent = Main, CornerRadius = UDim.new(0, 12)}); AddShadow(Main, 0.4); Ascent.MainFrameRef = Main
     
-    -- Apply Transparency if Acrylic
-    if Config.Acrylic then
-        Main.BackgroundTransparency = 0.25
-    else
-        Main.BackgroundTransparency = 0
-    end
+    if Config.Acrylic then Main.BackgroundTransparency = 0.25 else Main.BackgroundTransparency = 0 end
 
     local Sidebar = Create("Frame", {Name = "Sidebar", Parent = Main, BackgroundColor3 = Ascent.Theme.Sidebar, Size = UDim2.new(0, 200, 1, 0)}); Create("UICorner", {Parent = Sidebar, CornerRadius = UDim.new(0, 12)}); Create("Frame", {Parent = Sidebar, BackgroundColor3 = Ascent.Theme.Sidebar, Size = UDim2.new(0, 10, 1, 0), Position = UDim2.new(1, -10, 0, 0), BorderSizePixel = 0})
     if Config.Acrylic then Sidebar.BackgroundTransparency = 0.3 end
