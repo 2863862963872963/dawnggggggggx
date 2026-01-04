@@ -25,7 +25,7 @@ local Ascent = {
     IsVisible = true,
     Flags = {},
     ConfigFolder = "AscentLib_Configs",
-    Version = "1.7 Updated",
+    Version = "1.8 Updated", -- Bumped version
     SettingsMenu = nil
 }
 
@@ -46,7 +46,8 @@ Ascent.Themes = {
         TrafficRed = Color3.fromRGB(255, 95, 87),
         TrafficYellow = Color3.fromRGB(255, 189, 46),
         TrafficGreen = Color3.fromRGB(40, 201, 64),
-        Transparency = 0.1 -- Increased default transparency slightly
+        Transparency = 0.1,
+        ElementTransparency = 0.2 -- Added element transparency
     },
     MacLight = {
         Background = Color3.fromRGB(240, 240, 245),
@@ -63,7 +64,8 @@ Ascent.Themes = {
         TrafficRed = Color3.fromRGB(255, 95, 87),
         TrafficYellow = Color3.fromRGB(255, 189, 46),
         TrafficGreen = Color3.fromRGB(40, 201, 64),
-        Transparency = 0.1
+        Transparency = 0.1,
+        ElementTransparency = 0.2 -- Added element transparency
     }
 }
 Ascent.Theme = Ascent.Themes.MacDark
@@ -302,7 +304,13 @@ end
 local function RegisterContainerFunctions(Container, PageInstance)
     local Funcs = {}
     local function AddElementFrame(SizeY)
-        local F = Create("Frame", {Parent = PageInstance, BackgroundColor3 = Ascent.Theme.Element, Size = UDim2.new(1, 0, 0, SizeY), BorderSizePixel = 0})
+        local F = Create("Frame", {
+            Parent = PageInstance, 
+            BackgroundColor3 = Ascent.Theme.Element, 
+            Size = UDim2.new(1, 0, 0, SizeY), 
+            BorderSizePixel = 0,
+            BackgroundTransparency = Ascent.Theme.ElementTransparency or 0.1 -- Updated Transparency
+        })
         Create("UICorner", {Parent = F, CornerRadius = UDim.new(0, 8)})
         return F
     end
@@ -435,9 +443,11 @@ local function RegisterContainerFunctions(Container, PageInstance)
                     Name = "ExtensionPopup", Parent = Ascent.ScreenGuiRef,
                     BackgroundColor3 = Ascent.Theme.Background,
                     Position = UDim2.new(0.5, -150, 0.5, -200), Size = UDim2.new(0, 300, 0, 400),
-                    Visible = false, ZIndex = 200
+                    Visible = false, ZIndex = 200,
+                    BackgroundTransparency = Ascent.Theme.Transparency -- Transparency
                 })
                 Create("UICorner", {Parent = ExtFrame, CornerRadius = UDim.new(0, 12)})
+                Create("UIStroke", {Parent = ExtFrame, Color = Ascent.Theme.Divider, Thickness = 1})
                 AddShadow(ExtFrame)
                 MakeDraggable(ExtFrame, ExtFrame)
                 
@@ -459,10 +469,15 @@ local function RegisterContainerFunctions(Container, PageInstance)
                 ExtFrame = Create("Frame", {
                     Name = "Extension", Parent = TargetParent, -- Parenting to Main Page Holder
                     BackgroundColor3 = Ascent.Theme.Background,
+                    BackgroundTransparency = Ascent.Theme.Transparency, -- Transparency
                     Position = startPos, Size = width,
                     ZIndex = 50 -- On top
                 })
                 
+                if ExtVariant ~= "Side" then
+                     AddShadow(ExtFrame, 0.5) -- Add Shadow for depth
+                end
+
                 if ExtVariant == "Side" then
                     -- Align right
                     ExtFrame.AnchorPoint = Vector2.new(1, 0)
@@ -472,13 +487,16 @@ local function RegisterContainerFunctions(Container, PageInstance)
                 end
                 
                 -- Back Button (Only for Full/Side)
-                 local Header = Create("Frame", {Parent = ExtFrame, BackgroundTransparency = 1, Size = UDim2.new(1,0,0,40)})
+                 local Header = Create("Frame", {Parent = ExtFrame, BackgroundTransparency = 1, Size = UDim2.new(1,0,0,50)})
+                 -- Divider line for header
+                 Create("Frame", {Parent = Header, BackgroundColor3 = Ascent.Theme.Divider, Size = UDim2.new(1, -40, 0, 1), Position = UDim2.new(0, 20, 1, -1)})
+
                 local BackBtn = Create("ImageButton", {
                     Parent = Header, BackgroundTransparency = 1,
-                    Position = UDim2.new(0, 5, 0, 5), Size = UDim2.new(0, 30, 0, 30),
+                    Position = UDim2.new(0, 15, 0.5, -15), Size = UDim2.new(0, 30, 0, 30),
                     Image = "rbxassetid://6031091004", ImageColor3 = Ascent.Theme.Accent, Rotation = 180
                 })
-                Create("TextLabel", {Parent = Header, Text = Config.Text .. " Settings", Font = Enum.Font.GothamBold, TextSize = 14, TextColor3 = Ascent.Theme.Text, Size = UDim2.new(1,-40,1,0), Position = UDim2.new(0,40,0,0), BackgroundTransparency = 1, TextXAlignment = Enum.TextXAlignment.Left})
+                Create("TextLabel", {Parent = Header, Text = Config.Text .. " Settings", Font = Enum.Font.GothamBold, TextSize = 16, TextColor3 = Ascent.Theme.Text, Size = UDim2.new(1,-60,1,0), Position = UDim2.new(0,55,0,0), BackgroundTransparency = 1, TextXAlignment = Enum.TextXAlignment.Left})
 
                 BackBtn.MouseButton1Click:Connect(function()
                     if ExtVariant == "Side" then
@@ -492,7 +510,7 @@ local function RegisterContainerFunctions(Container, PageInstance)
             -- Common Container for Elements
             Container = Create("ScrollingFrame", {
                 Parent = ExtFrame, BackgroundTransparency = 1,
-                Position = UDim2.new(0, 0, 0, 40), Size = UDim2.new(1, 0, 1, -40),
+                Position = UDim2.new(0, 0, 0, 50), Size = UDim2.new(1, 0, 1, -50),
                 CanvasSize = UDim2.new(0,0,0,0), AutomaticCanvasSize = Enum.AutomaticSize.Y,
                 ScrollBarThickness = 2, ScrollBarImageColor3 = Ascent.Theme.Accent
             }); Create("UIListLayout", {Parent = Container, SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 10)}); Create("UIPadding", {Parent = Container, PaddingTop = UDim.new(0, 10), PaddingLeft = UDim.new(0, 20), PaddingRight = UDim.new(0, 20), PaddingBottom = UDim.new(0, 20)})
@@ -574,7 +592,13 @@ local function RegisterContainerFunctions(Container, PageInstance)
         local Selected = IsMulti and {} or (Config.Default or "None")
         if Config.Flag then Ascent.Flags[Config.Flag] = Selected end
 
-        local F = Create("Frame", {Parent = PageInstance, BackgroundColor3 = Ascent.Theme.Element, Size = UDim2.new(1, 0, 0, 40), ClipsDescendants = true}); Create("UICorner", {Parent = F, CornerRadius = UDim.new(0, 8)})
+        local F = Create("Frame", {
+            Parent = PageInstance, 
+            BackgroundColor3 = Ascent.Theme.Element, 
+            BackgroundTransparency = Ascent.Theme.ElementTransparency, -- Transparency
+            Size = UDim2.new(1, 0, 0, 40), 
+            ClipsDescendants = true
+        }); Create("UICorner", {Parent = F, CornerRadius = UDim.new(0, 8)})
         
         local function GetText()
             if IsMulti then
@@ -657,6 +681,18 @@ function Ascent:CreateWindow(Config)
     -- TRANSPARENCY HANDLING
     local Main = Create("Frame", {Name = "MainFrame", Parent = Gui, BackgroundColor3 = Ascent.Theme.Background, BackgroundTransparency = Ascent.Theme.Transparency, Position = UDim2.fromScale(0.5, 0.5), AnchorPoint = Vector2.new(0.5, 0.5), Size = Config.Size or UDim2.fromOffset(750, 500), ClipsDescendants = false}); Create("UICorner", {Parent = Main, CornerRadius = UDim.new(0, 12)}); AddShadow(Main, 0.4); Ascent.MainFrameRef = Main
     local Sidebar = Create("Frame", {Name = "Sidebar", Parent = Main, BackgroundColor3 = Ascent.Theme.Sidebar, BackgroundTransparency = Ascent.Theme.Transparency, Size = UDim2.new(0, 200, 1, 0)}); Create("UICorner", {Parent = Sidebar, CornerRadius = UDim.new(0, 12)}); Create("Frame", {Parent = Sidebar, BackgroundColor3 = Ascent.Theme.Sidebar, BackgroundTransparency = Ascent.Theme.Transparency, Size = UDim2.new(0, 10, 1, 0), Position = UDim2.new(1, -10, 0, 0), BorderSizePixel = 0})
+
+    -- NEW: Sidebar Divider Line for cleaner Separation
+    Create("Frame", {
+        Name = "SidebarDivider",
+        Parent = Sidebar,
+        BackgroundColor3 = Ascent.Theme.Divider,
+        BackgroundTransparency = 0.5, -- Transparent Divider
+        Size = UDim2.new(0, 1, 1, 0),
+        Position = UDim2.new(1, 0, 0, 0),
+        BorderSizePixel = 0,
+        ZIndex = 2
+    })
 
     local Controls = Create("Frame", {Parent = Sidebar, BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 50)})
     local C, M, MX = Create("ImageButton", {Parent = Controls, BackgroundColor3 = Ascent.Theme.TrafficRed, Position = UDim2.new(0, 18, 0, 18), Size = UDim2.new(0, 12, 0, 12), AutoButtonColor = false}), Create("ImageButton", {Parent = Controls, BackgroundColor3 = Ascent.Theme.TrafficYellow, Position = UDim2.new(0, 38, 0, 18), Size = UDim2.new(0, 12, 0, 12), AutoButtonColor = false}), Create("ImageButton", {Parent = Controls, BackgroundColor3 = Ascent.Theme.TrafficGreen, Position = UDim2.new(0, 58, 0, 18), Size = UDim2.new(0, 12, 0, 12), AutoButtonColor = false})
