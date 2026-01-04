@@ -13,22 +13,23 @@ local Ascent = {
     Elements = {}, 
     OpenedFrames = {},
     NotificationArea = nil,
+    NotificationLayout = nil,
     IsMobile = UserInputService.TouchEnabled,
     CurrentTheme = "MacDark",
     MainFrameRef = nil,
     MinimizeBtnRef = nil,
     ScreenGuiRef = nil,
     ScaleObj = nil,
-    PageHolderRef = nil, -- Added reference for PageHolder
+    PageHolderRef = nil,
     Keybind = Enum.KeyCode.RightControl,
     IsVisible = true,
     Flags = {},
     ConfigFolder = "AscentLib_Configs",
-    Version = "1.6 Updated",
-    SettingsMenu = nil -- Reference for the user settings
+    Version = "1.7 Updated",
+    SettingsMenu = nil
 }
 
---// THEME SYSTEM (Refined macOS Palette with Transparency)
+--// THEME SYSTEM
 Ascent.Themes = {
     MacDark = {
         Background = Color3.fromRGB(30, 30, 35),
@@ -45,7 +46,7 @@ Ascent.Themes = {
         TrafficRed = Color3.fromRGB(255, 95, 87),
         TrafficYellow = Color3.fromRGB(255, 189, 46),
         TrafficGreen = Color3.fromRGB(40, 201, 64),
-        Transparency = 0.05 -- 5% Transparency for Glass Effect
+        Transparency = 0.1 -- Increased default transparency slightly
     },
     MacLight = {
         Background = Color3.fromRGB(240, 240, 245),
@@ -62,7 +63,7 @@ Ascent.Themes = {
         TrafficRed = Color3.fromRGB(255, 95, 87),
         TrafficYellow = Color3.fromRGB(255, 189, 46),
         TrafficGreen = Color3.fromRGB(40, 201, 64),
-        Transparency = 0.05
+        Transparency = 0.1
     }
 }
 Ascent.Theme = Ascent.Themes.MacDark
@@ -70,8 +71,12 @@ Ascent.Theme = Ascent.Themes.MacDark
 --// UTILITY FUNCTIONS
 local function Create(class, props)
     local inst = Instance.new(class)
+    -- RichText Support for ALL text objects
+    if class:find("Text") then 
+        inst.RichText = true 
+    end
+    
     for k, v in pairs(props) do inst[k] = v end
-    if class:find("Text") then inst.RichText = true end
     return inst
 end
 
@@ -97,7 +102,6 @@ local function CreateRipple(Parent)
     end)
 end
 
---// MOBILE SUPPORTED DRAG
 local function MakeDraggable(topbar, object)
     local Dragging, DragInput, DragStart, StartPos
     local function Update(input)
@@ -120,21 +124,85 @@ function Ascent:SetTheme(ThemeName)
     if Ascent.Themes[ThemeName] then 
         Ascent.Theme = Ascent.Themes[ThemeName]
         Ascent.CurrentTheme = ThemeName
-        if Ascent.MainFrameRef then
-            Ascent.MainFrameRef.BackgroundColor3 = Ascent.Theme.Background
-            Ascent.MainFrameRef.BackgroundTransparency = Ascent.Theme.Transparency
-            if Ascent.MainFrameRef:FindFirstChild("Sidebar") then
-                Ascent.MainFrameRef.Sidebar.BackgroundColor3 = Ascent.Theme.Sidebar
-                Ascent.MainFrameRef.Sidebar.BackgroundTransparency = Ascent.Theme.Transparency
-            end
+        Ascent:UpdateTransparency() -- Refresh transparency on theme change
+    end
+end
+
+-- NEW: Set Transparency API
+function Ascent:SetTransparency(Value)
+    Ascent.Theme.Transparency = math.clamp(Value, 0, 1)
+    Ascent:UpdateTransparency()
+end
+
+function Ascent:UpdateTransparency()
+    if Ascent.MainFrameRef then
+        TweenService:Create(Ascent.MainFrameRef, TweenInfo.new(0.3), {
+            BackgroundColor3 = Ascent.Theme.Background,
+            BackgroundTransparency = Ascent.Theme.Transparency
+        }):Play()
+        
+        if Ascent.MainFrameRef:FindFirstChild("Sidebar") then
+             TweenService:Create(Ascent.MainFrameRef.Sidebar, TweenInfo.new(0.3), {
+                BackgroundColor3 = Ascent.Theme.Sidebar,
+                BackgroundTransparency = Ascent.Theme.Transparency
+            }):Play()
         end
     end
 end
 
---// NOTIFICATIONS
+-- NEW: Set Scale API
+function Ascent:SetScale(Value)
+    if Ascent.ScaleObj then
+        Ascent.ScaleObj.Scale = Value
+    end
+end
+
+--// NOTIFICATIONS (UPDATED)
+function Ascent:SetNotificationPosition(Position)
+    local Area = Ascent.NotificationArea
+    if not Area then return end
+    
+    local ListLayout = Ascent.NotificationLayout
+    
+    -- Reset alignments
+    ListLayout.VerticalAlignment = Enum.VerticalAlignment.Bottom
+    ListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Right
+
+    if Position:lower() == "left" then
+        Area.Position = UDim2.new(0, 20, 0, 20)
+        Area.Size = UDim2.new(0, 300, 1, -20)
+        ListLayout.VerticalAlignment = Enum.VerticalAlignment.Bottom
+        ListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Left
+    elseif Position:lower() == "right" then
+        Area.Position = UDim2.new(1, -320, 0, 20)
+        Area.Size = UDim2.new(0, 300, 1, -20)
+        ListLayout.VerticalAlignment = Enum.VerticalAlignment.Bottom
+        ListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Right
+    elseif Position:lower() == "bottom" or Position:lower() == "bottomright" then
+        Area.Position = UDim2.new(1, -320, 0, -20)
+        Area.AnchorPoint = Vector2.new(0, 1) -- Anchor bottom
+        Area.Size = UDim2.new(0, 300, 1, 0)
+        ListLayout.VerticalAlignment = Enum.VerticalAlignment.Bottom
+    elseif Position:lower() == "under" or Position:lower() == "center" then
+        Area.Position = UDim2.new(0.5, -150, 0.85, 0)
+        Area.Size = UDim2.new(0, 300, 0.15, 0) -- Small area at bottom center
+        ListLayout.VerticalAlignment = Enum.VerticalAlignment.Bottom
+        ListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+    end
+end
+
 function Ascent:Notify(Config)
     Config = Config or {}
-    local Frame = Create("Frame", {Parent = Ascent.NotificationArea, BackgroundColor3 = Ascent.Theme.Background, Size = UDim2.new(1, 0, 0, 0), ClipsDescendants = true, BorderSizePixel = 0})
+    -- Config.Actions = {{Text="Yes", Callback=function}, {Text="No", Callback=function}}
+    
+    local Frame = Create("Frame", {
+        Parent = Ascent.NotificationArea, 
+        BackgroundColor3 = Ascent.Theme.Background, 
+        Size = UDim2.new(1, 0, 0, 0), 
+        ClipsDescendants = true, 
+        BorderSizePixel = 0,
+        BackgroundTransparency = 0.1 -- Slight transparency for notifs
+    })
     Create("UICorner", {Parent = Frame, CornerRadius = UDim.new(0, 10)})
     Create("UIStroke", {Parent = Frame, Color = Ascent.Theme.Divider, Thickness = 1})
     AddShadow(Frame, 0.6)
@@ -143,18 +211,54 @@ function Ascent:Notify(Config)
     if Config.Type == "Success" then IconId = "rbxassetid://3944661110" end
     if Config.Type == "Warning" then IconId = "rbxassetid://3944672694" end
     if Config.Type == "Error" then IconId = "rbxassetid://3944676354" end
+    if Config.Type == "Info" then IconId = "rbxassetid://3944680095" end -- Generic
 
     Create("ImageLabel", {Parent = Frame, BackgroundTransparency = 1, Position = UDim2.new(0, 15, 0, 15), Size = UDim2.new(0, 24, 0, 24), Image = IconId, ImageColor3 = Config.Type == "Success" and Ascent.Theme.Green or (Config.Type == "Error" and Ascent.Theme.Red or Ascent.Theme.Accent)})
     Create("TextLabel", {Parent = Frame, BackgroundTransparency = 1, Position = UDim2.new(0, 50, 0, 15), Size = UDim2.new(1, -60, 0, 20), Font = Enum.Font.GothamBold, Text = Config.Title or "Notification", TextColor3 = Ascent.Theme.Text, TextSize = 14, TextXAlignment = Enum.TextXAlignment.Left})
     Create("TextLabel", {Parent = Frame, BackgroundTransparency = 1, Position = UDim2.new(0, 50, 0, 38), Size = UDim2.new(1, -60, 0, 30), Font = Enum.Font.GothamMedium, Text = Config.Content or "Message", TextColor3 = Ascent.Theme.SubText, TextSize = 13, TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true})
 
-    TweenService:Create(Frame, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = UDim2.new(1, 0, 0, 80)}):Play()
-    task.delay(Config.Duration or 3, function() if Frame then local T = TweenService:Create(Frame, TweenInfo.new(0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.In), {Size = UDim2.new(1, 0, 0, 0)}); T:Play(); T.Completed:Wait(); Frame:Destroy() end end)
+    local BaseHeight = 80
+    
+    -- Interaction Buttons
+    if Config.Actions then
+        BaseHeight = 120 -- Taller for buttons
+        local ActionContainer = Create("Frame", {Parent = Frame, BackgroundTransparency = 1, Position = UDim2.new(0, 50, 0, 75), Size = UDim2.new(1, -60, 0, 30)})
+        Create("UIListLayout", {Parent = ActionContainer, FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 10)})
+        
+        for _, act in pairs(Config.Actions) do
+            local Btn = Create("TextButton", {
+                Parent = ActionContainer, 
+                BackgroundColor3 = Ascent.Theme.Element, 
+                Size = UDim2.new(0, 0, 1, 0), 
+                AutomaticSize = Enum.AutomaticSize.X,
+                Text = "  "..act.Text.."  ", 
+                Font = Enum.Font.GothamMedium, 
+                TextColor3 = Ascent.Theme.Text, 
+                TextSize = 12,
+                AutoButtonColor = false
+            })
+            Create("UICorner", {Parent = Btn, CornerRadius = UDim.new(0, 6)})
+            Create("UIStroke", {Parent = Btn, Color = Ascent.Theme.Divider, Thickness = 1})
+            
+            Btn.MouseButton1Click:Connect(function()
+                if act.Callback then act.Callback() end
+                -- Close notification on click
+                 local T = TweenService:Create(Frame, TweenInfo.new(0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.In), {Size = UDim2.new(1, 0, 0, 0)}); T:Play(); T.Completed:Wait(); Frame:Destroy()
+            end)
+        end
+    end
+
+    TweenService:Create(Frame, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = UDim2.new(1, 0, 0, BaseHeight)}):Play()
+    
+    -- Only auto-close if no actions (or if Duration explicitly set)
+    if not Config.Actions or Config.Duration then
+        task.delay(Config.Duration or 3, function() if Frame then local T = TweenService:Create(Frame, TweenInfo.new(0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.In), {Size = UDim2.new(1, 0, 0, 0)}); T:Play(); T.Completed:Wait(); Frame:Destroy() end end)
+    end
 end
 
 function Ascent:InitNotifications(Gui)
     Ascent.NotificationArea = Create("Frame", {Name = "Notifications", Parent = Gui, BackgroundTransparency = 1, Position = UDim2.new(1, -320, 0, 20), Size = UDim2.new(0, 300, 1, -20), ZIndex = 1000})
-    Create("UIListLayout", {Parent = Ascent.NotificationArea, SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 10), VerticalAlignment = Enum.VerticalAlignment.Bottom})
+    Ascent.NotificationLayout = Create("UIListLayout", {Parent = Ascent.NotificationArea, SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 10), VerticalAlignment = Enum.VerticalAlignment.Bottom})
 end
 
 --// MINIMIZE / MOBILE TOGGLE
@@ -316,10 +420,10 @@ local function RegisterContainerFunctions(Container, PageInstance)
             local ExtBtn = Create("ImageButton", {
                 Parent = F, BackgroundTransparency = 1,
                 Position = UDim2.new(1, -85, 0.5, -10), Size = UDim2.new(0, 20, 0, 20),
-                Image = "rbxassetid://3944686274", -- Gears Icon
-                ImageColor3 = Ascent.Theme.Text, -- Changed to Text color for better visibility
+                Image = "rbxassetid://6031280882", -- NEW ID as requested
+                ImageColor3 = Ascent.Theme.Text, 
                 AutoButtonColor = false,
-                ZIndex = 5 -- Fix for icon not showing
+                ZIndex = 5 
             })
             
             local ExtFrame
@@ -342,9 +446,7 @@ local function RegisterContainerFunctions(Container, PageInstance)
                 Close.MouseButton1Click:Connect(function() ExtFrame.Visible = false end)
             else
                 -- PAGE BASED VARIANTS (Full or Side)
-                -- FIX: Use PageHolder instead of immediate parent to escape Sections/Containers
                 local TargetParent = Ascent.PageHolderRef or PageInstance.Parent 
-                -- Fallback to PageInstance.Parent only if global ref missing, but usually Ref is set.
                 
                 local width = UDim2.new(1, 0, 1, 0)
                 local startPos = UDim2.new(1, 0, 0, 0)
@@ -422,7 +524,6 @@ local function RegisterContainerFunctions(Container, PageInstance)
         local F = AddElementFrame(50)
         Create("TextLabel", {Parent = F, BackgroundTransparency = 1, Position = UDim2.new(0, 12, 0, 5), Size = UDim2.new(1, -50, 0, 20), Text = Config.Text, Font = Enum.Font.GothamMedium, TextColor3 = Ascent.Theme.Text, TextSize = 13, TextXAlignment = Enum.TextXAlignment.Left})
         
-        -- UPDATED: Numeric Box Input for Slider
         local VBox = Create("TextBox", {
             Parent = F, BackgroundTransparency = 1, 
             Position = UDim2.new(1, -50, 0, 5), Size = UDim2.new(0, 40, 0, 20), 
@@ -588,6 +689,12 @@ function Ascent:CreateWindow(Config)
     
     -- Add Default Settings Elements
     SettingsAPI:AddLabel("User Settings")
+    
+    SettingsAPI:AddSection("Interface"):AddSlider({
+        Text = "UI Transparency", Min = 0, Max = 100, Default = Ascent.Theme.Transparency * 100,
+        Callback = function(v) Ascent:SetTransparency(v/100) end
+    })
+    
     SettingsAPI:AddButton({Text = "Anonymous Mode", Callback = function()
          if UsernameLab.Text == "Hidden User" then UsernameLab.Text = LocalPlayer.Name; Av.Visible = true else UsernameLab.Text = "Hidden User"; Av.Visible = false end
     end})
