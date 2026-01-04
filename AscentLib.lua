@@ -4,6 +4,7 @@ local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local CoreGui = game:GetService("CoreGui")
 local HttpService = game:GetService("HttpService")
+local Lighting = game:GetService("Lighting")
 
 local LocalPlayer = Players.LocalPlayer
 local Mouse = LocalPlayer:GetMouse()
@@ -17,12 +18,14 @@ local Ascent = {
     MainFrameRef = nil,
     MinimizeBtnRef = nil,
     ScreenGuiRef = nil,
-    ScaleObj = nil, -- New Scale Object
+    ScaleObj = nil,
+    ActiveExtension = nil, -- Tracks currently open extension
+    BlurRef = nil, -- Reference to Lighting Blur
     Keybind = Enum.KeyCode.RightControl,
     IsVisible = true,
     Flags = {},
     ConfigFolder = "AscentLib_Configs",
-    Version = "1.2 Ultimate"
+    Version = "1.3 Ultimate"
 }
 
 --// THEME SYSTEM (Refined macOS Palette)
@@ -98,7 +101,7 @@ local function MakeDraggable(topbar, object)
     local function Update(input)
         local Delta = input.Position - DragStart
         local Position = UDim2.new(StartPos.X.Scale, StartPos.X.Offset + Delta.X, StartPos.Y.Scale, StartPos.Y.Offset + Delta.Y)
-        TweenService:Create(object, TweenInfo.new(0.05), {Position = Position}):Play() -- Faster response for mobile
+        TweenService:Create(object, TweenInfo.new(0.05), {Position = Position}):Play()
     end
     topbar.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
@@ -120,8 +123,6 @@ function Ascent:SetTheme(ThemeName)
             if Ascent.MainFrameRef:FindFirstChild("Sidebar") then
                 Ascent.MainFrameRef.Sidebar.BackgroundColor3 = Ascent.Theme.Sidebar
             end
-            -- Note: A full theme refresh would require iterating over all elements, 
-            -- but for this snippet we update main containers.
         end
     end
 end
@@ -129,6 +130,12 @@ end
 function Ascent:SetScale(Scale)
     if Ascent.ScaleObj then
         Ascent.ScaleObj.Scale = Scale
+    end
+end
+
+function Ascent:ToggleBlur(state)
+    if Ascent.BlurRef then
+        TweenService:Create(Ascent.BlurRef, TweenInfo.new(0.5), {Size = state and 24 or 0}):Play()
     end
 end
 
@@ -165,7 +172,7 @@ function Ascent:InitMinimize(Gui)
     Create("ImageLabel", {Parent = Btn, BackgroundTransparency = 1, Size = UDim2.new(0, 30, 0, 30), Position = UDim2.new(0.5, -15, 0.5, -15), Image = "rbxassetid://6031280882", ImageColor3 = Ascent.Theme.Accent})
     MakeDraggable(Btn, Btn)
     Btn.MouseButton1Click:Connect(function() 
-        Ascent.IsVisible = true; Ascent.MainFrameRef.Visible = true; Btn.Visible = false
+        Ascent.IsVisible = true; Ascent.MainFrameRef.Visible = true; Btn.Visible = false; Ascent:ToggleBlur(true)
         TweenService:Create(Ascent.MainFrameRef, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = UDim2.fromOffset(750, 500)}):Play() 
     end)
     Ascent.MinimizeBtnRef = Btn
@@ -173,7 +180,7 @@ end
 
 --// TOOLTIPS
 function Ascent:AddTooltip(Element, Text)
-    if Ascent.IsMobile then return end -- No tooltips on mobile
+    if Ascent.IsMobile then return end
     local Tooltip = Create("Frame", {Parent = Ascent.MainFrameRef.Parent, BackgroundColor3 = Ascent.Theme.Sidebar, Size = UDim2.new(0, 0, 0, 28), AutomaticSize = Enum.AutomaticSize.X, Visible = false, ZIndex = 300})
     Create("UICorner", {Parent = Tooltip, CornerRadius = UDim.new(0, 6)}); Create("UIStroke", {Parent = Tooltip, Color = Ascent.Theme.Divider, Thickness = 1}); AddShadow(Tooltip, 0.5)
     Create("TextLabel", {Parent = Tooltip, BackgroundTransparency = 1, Position = UDim2.new(0, 10, 0, 0), Size = UDim2.new(0, 0, 1, 0), AutomaticSize = Enum.AutomaticSize.X, Font = Enum.Font.GothamMedium, Text = Text, TextColor3 = Ascent.Theme.Text, TextSize = 12})
@@ -182,7 +189,84 @@ function Ascent:AddTooltip(Element, Text)
     Element.MouseMoved:Connect(function() local M = UserInputService:GetMouseLocation(); Tooltip.Position = UDim2.new(0, M.X + 15, 0, M.Y - 25) end)
 end
 
---// ELEMENT API HELPERS
+--// FORWARD DECLARATION
+local RegisterContainerFunctions
+
+--// EXTENSION SYSTEM
+local function CreateExtensionPanel(ParentElement)
+    -- Close existing extension if any
+    if Ascent.ActiveExtension and Ascent.ActiveExtension.Parent then
+        local Old = Ascent.ActiveExtension
+        TweenService:Create(Old, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {Position = UDim2.new(1, 10, 0, 0)}):Play()
+        task.delay(0.3, function() Old.Visible = false end)
+    end
+
+    local ExtensionFrame = Ascent.MainFrameRef:FindFirstChild("ExtensionPanel_" .. ParentElement.Name)
+    
+    if not ExtensionFrame then
+        ExtensionFrame = Create("Frame", {
+            Name = "ExtensionPanel_" .. ParentElement.Name,
+            Parent = Ascent.MainFrameRef,
+            BackgroundColor3 = Ascent.Theme.Sidebar,
+            Position = UDim2.new(1, 10, 0, 0), -- Starts hidden right
+            Size = UDim2.new(0, 240, 1, 0),
+            ZIndex = 50,
+            Visible = false
+        })
+        Create("UICorner", {Parent = ExtensionFrame, CornerRadius = UDim.new(0, 12)})
+        AddShadow(ExtensionFrame, 0.5)
+        
+        -- Header
+        local Header = Create("Frame", {Parent = ExtensionFrame, BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 40)})
+        Create("TextLabel", {Parent = Header, Text = "Settings", Font = Enum.Font.GothamBold, TextColor3 = Ascent.Theme.Text, TextSize = 14, Position = UDim2.new(0, 15, 0, 0), Size = UDim2.new(1, -50, 1, 0), BackgroundTransparency = 1, TextXAlignment = Enum.TextXAlignment.Left})
+        local CloseBtn = Create("TextButton", {Parent = Header, Text = "✕", Font = Enum.Font.GothamBold, TextColor3 = Ascent.Theme.SubText, TextSize = 14, BackgroundTransparency = 1, Size = UDim2.new(0, 30, 0, 30), Position = UDim2.new(1, -35, 0.5, -15)})
+        
+        -- Content
+        local Content = Create("ScrollingFrame", {Parent = ExtensionFrame, BackgroundTransparency = 1, Position = UDim2.new(0, 10, 0, 45), Size = UDim2.new(1, -20, 1, -55), CanvasSize = UDim2.new(0,0,0,0), AutomaticCanvasSize = Enum.AutomaticSize.Y, ScrollBarThickness = 2, ScrollBarImageColor3 = Ascent.Theme.Accent})
+        Create("UIListLayout", {Parent = Content, SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 8)})
+
+        -- Logic
+        local ExtAPI = {}
+        RegisterContainerFunctions(ExtAPI, Content)
+        
+        function ExtAPI:Toggle()
+            local IsOpening = not ExtensionFrame.Visible
+            
+            if IsOpening then
+                ExtensionFrame.Visible = true
+                Ascent.ActiveExtension = ExtensionFrame
+                TweenService:Create(ExtensionFrame, TweenInfo.new(0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {Position = UDim2.new(1, -230, 0, 0)}):Play()
+            else
+                TweenService:Create(ExtensionFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.In), {Position = UDim2.new(1, 10, 0, 0)}):Play()
+                task.delay(0.3, function() ExtensionFrame.Visible = false end)
+                if Ascent.ActiveExtension == ExtensionFrame then Ascent.ActiveExtension = nil end
+            end
+        end
+
+        CloseBtn.MouseButton1Click:Connect(function() ExtAPI:Toggle() end)
+        ExtensionFrame:SetAttribute("API", ExtAPI) -- Store reference
+        
+        -- Attach to Parent Element
+        local GearBtn = Create("ImageButton", {
+            Parent = ParentElement,
+            Size = UDim2.new(0, 16, 0, 16),
+            Position = UDim2.new(1, -30, 0.5, -8), -- Positioned right
+            BackgroundTransparency = 1,
+            Image = "rbxassetid://6031094678", -- Gear Icon
+            ImageColor3 = Ascent.Theme.SubText,
+            Visible = true,
+            ZIndex = 5
+        })
+        
+        GearBtn.MouseButton1Click:Connect(function() ExtAPI:Toggle() end)
+        return ExtAPI
+    else
+        -- Return existing API if already created
+        -- Note: This requires caching, but for simplicity we assume creation once per element call
+        return nil 
+    end
+end
+
 local function AddAPI(Obj, Frame, Config)
     function Obj:SetVisible(bool) Frame.Visible = bool end
     function Obj:Destroy() Frame:Destroy() end
@@ -193,10 +277,14 @@ local function AddAPI(Obj, Frame, Config)
             Create("ImageLabel", {Parent = Ov, BackgroundTransparency = 1, Size = UDim2.new(0,24,0,24), Position = UDim2.new(0.5,-12,0.5,-12), Image = "rbxassetid://3926305904", ImageColor3 = Color3.new(1,1,1)})
         end
     end
+    -- NEW: Extend API
+    function Obj:Extend()
+        return CreateExtensionPanel(Frame)
+    end
 end
 
 --// MAIN ELEMENT CREATION
-local function RegisterContainerFunctions(Container, PageInstance)
+RegisterContainerFunctions = function(Container, PageInstance)
     local Funcs = {}
     local function AddElementFrame(SizeY)
         local F = Create("Frame", {Parent = PageInstance, BackgroundColor3 = Ascent.Theme.Element, Size = UDim2.new(1, 0, 0, SizeY), BorderSizePixel = 0})
@@ -234,70 +322,44 @@ local function RegisterContainerFunctions(Container, PageInstance)
         return F
     end
 
-    -- IMPROVED BUTTON WITH VARIANTS
     function Funcs:AddButton(Config)
-        local Variant = Config.Variant or "Default" -- Default, Outline
+        local Variant = Config.Variant or "Default"
         local F = AddElementFrame(40)
-        
-        -- API Object
         local Obj = {}; AddAPI(Obj, F, Config)
-
         if Variant == "Outline" then
             F.BackgroundColor3 = Ascent.Theme.Background
             Create("UIStroke", {Parent = F, Color = Ascent.Theme.Divider, Thickness = 1})
         end
-
         local B = Create("TextButton", {Parent = F, BackgroundTransparency = 1, Size = UDim2.new(1, 0, 1, 0), Font = Enum.Font.GothamMedium, Text = Config.Text, TextColor3 = Ascent.Theme.Text, TextSize = 14})
         if Config.Tooltip then Ascent:AddTooltip(B, Config.Tooltip) end
-        
-        B.MouseButton1Click:Connect(function() 
-            CreateRipple(F)
-            if Config.Callback then Config.Callback() end 
-        end)
-        
+        B.MouseButton1Click:Connect(function() CreateRipple(F); if Config.Callback then Config.Callback() end end)
         function Obj:SetText(t) B.Text = t end
         return Obj
     end
 
-    -- IMPROVED TOGGLE WITH VARIANTS
     function Funcs:AddToggle(Config)
         local State = Config.Default or false
-        local Variant = Config.Variant or "Switch" -- Switch, Checkbox
+        local Variant = Config.Variant or "Switch"
         if Config.Flag then Ascent.Flags[Config.Flag] = State end
-        
         local F = AddElementFrame(40)
         local Obj = {}; AddAPI(Obj, F, Config)
-
         Create("TextLabel", {Parent = F, BackgroundTransparency = 1, Position = UDim2.new(0, 12, 0, 0), Size = UDim2.new(1, -70, 1, 0), Font = Enum.Font.GothamMedium, Text = Config.Text, TextColor3 = Ascent.Theme.Text, TextSize = 13, TextXAlignment = Enum.TextXAlignment.Left})
         local Trig = Create("TextButton", {Parent = F, BackgroundTransparency = 1, Size = UDim2.new(1, 0, 1, 0), Text = ""})
         if Config.Tooltip then Ascent:AddTooltip(Trig, Config.Tooltip) end
-
-        -- Visuals
         local Display, Knob, CheckIcon
-        
         if Variant == "Checkbox" then
-            Display = Create("Frame", {Parent = F, BackgroundColor3 = State and Ascent.Theme.Accent or Ascent.Theme.Divider, Position = UDim2.new(1, -35, 0.5, -10), Size = UDim2.new(0, 20, 0, 20)}); Create("UICorner", {Parent = Display, CornerRadius = UDim.new(0, 6)})
+            Display = Create("Frame", {Parent = F, BackgroundColor3 = State and Ascent.Theme.Accent or Ascent.Theme.Divider, Position = UDim2.new(1, -45, 0.5, -10), Size = UDim2.new(0, 20, 0, 20)}); Create("UICorner", {Parent = Display, CornerRadius = UDim.new(0, 6)})
             CheckIcon = Create("ImageLabel", {Parent = Display, BackgroundTransparency = 1, Size = UDim2.new(0, 14, 0, 14), Position = UDim2.new(0.5, -7, 0.5, -7), Image = "rbxassetid://6031094620", ImageColor3 = Color3.new(1,1,1), Visible = State})
         else
-            -- Default Switch
-            Display = Create("Frame", {Parent = F, BackgroundColor3 = State and Ascent.Theme.Accent or Ascent.Theme.Divider, Position = UDim2.new(1, -50, 0.5, -11), Size = UDim2.new(0, 36, 0, 22)}); Create("UICorner", {Parent = Display, CornerRadius = UDim.new(1, 0)})
+            Display = Create("Frame", {Parent = F, BackgroundColor3 = State and Ascent.Theme.Accent or Ascent.Theme.Divider, Position = UDim2.new(1, -60, 0.5, -11), Size = UDim2.new(0, 36, 0, 22)}); Create("UICorner", {Parent = Display, CornerRadius = UDim.new(1, 0)})
             Knob = Create("Frame", {Parent = Display, BackgroundColor3 = Color3.new(1,1,1), Position = State and UDim2.new(1, -20, 0.5, -9) or UDim2.new(0, 2, 0.5, -9), Size = UDim2.new(0, 18, 0, 18)}); Create("UICorner", {Parent = Knob, CornerRadius = UDim.new(1, 0)})
         end
-
         local function Upd()
             if Config.Flag then Ascent.Flags[Config.Flag] = State end
-            
-            if Variant == "Checkbox" then
-                Display.BackgroundColor3 = State and Ascent.Theme.Accent or Ascent.Theme.Divider
-                CheckIcon.Visible = State
-            else
-                TweenService:Create(Knob, TweenInfo.new(0.2), {Position = State and UDim2.new(1, -20, 0.5, -9) or UDim2.new(0, 2, 0.5, -9)}):Play()
-                TweenService:Create(Display, TweenInfo.new(0.2), {BackgroundColor3 = State and Ascent.Theme.Accent or Ascent.Theme.Divider}):Play()
-            end
+            if Variant == "Checkbox" then Display.BackgroundColor3 = State and Ascent.Theme.Accent or Ascent.Theme.Divider; CheckIcon.Visible = State
+            else TweenService:Create(Knob, TweenInfo.new(0.2), {Position = State and UDim2.new(1, -20, 0.5, -9) or UDim2.new(0, 2, 0.5, -9)}):Play(); TweenService:Create(Display, TweenInfo.new(0.2), {BackgroundColor3 = State and Ascent.Theme.Accent or Ascent.Theme.Divider}):Play() end
         end
-
         Trig.MouseButton1Click:Connect(function() State = not State; if Config.Callback then Config.Callback(State) end; Upd() end)
-        
         function Obj:Set(v) State = v; Upd(); if Config.Callback then Config.Callback(State) end end
         return Obj
     end
@@ -360,21 +422,44 @@ function Ascent:LoadConfig() if isfile(Ascent.ConfigFolder .. "/config.json") th
 
 function Ascent:CreateWindow(Config)
     if Ascent.ScreenGuiRef then Ascent.ScreenGuiRef:Destroy() end
+    if Ascent.BlurRef then Ascent.BlurRef:Destroy() end
+
     local Gui = Create("ScreenGui", {Name = "AscentUI", Parent = CoreGui, ZIndexBehavior = Enum.ZIndexBehavior.Sibling}); Ascent.ScreenGuiRef = Gui
     
     -- SCALE OBJECT
     local ScaleObj = Create("UIScale", {Parent = Gui, Scale = 1})
     Ascent.ScaleObj = ScaleObj
 
+    -- ACRYLIC BLUR SYSTEM
+    if Config.Acrylic then
+        local Blur = Instance.new("BlurEffect", Lighting)
+        Blur.Name = "AscentBlur"
+        Blur.Size = 24
+        Ascent.BlurRef = Blur
+        
+        -- Adjust Theme Transparency for Acrylic Look
+        Ascent.Theme.Background = Color3.fromRGB(30, 30, 35) -- Keep color
+        -- We will manually set transparency on the MainFrame below
+    end
+
     Ascent:InitNotifications(Gui); Ascent:InitMinimize(Gui)
 
     local Main = Create("Frame", {Name = "MainFrame", Parent = Gui, BackgroundColor3 = Ascent.Theme.Background, Position = UDim2.fromScale(0.5, 0.5), AnchorPoint = Vector2.new(0.5, 0.5), Size = Config.Size or UDim2.fromOffset(750, 500), ClipsDescendants = false}); Create("UICorner", {Parent = Main, CornerRadius = UDim.new(0, 12)}); AddShadow(Main, 0.4); Ascent.MainFrameRef = Main
+    
+    -- Apply Transparency if Acrylic
+    if Config.Acrylic then
+        Main.BackgroundTransparency = 0.25
+    else
+        Main.BackgroundTransparency = 0
+    end
+
     local Sidebar = Create("Frame", {Name = "Sidebar", Parent = Main, BackgroundColor3 = Ascent.Theme.Sidebar, Size = UDim2.new(0, 200, 1, 0)}); Create("UICorner", {Parent = Sidebar, CornerRadius = UDim.new(0, 12)}); Create("Frame", {Parent = Sidebar, BackgroundColor3 = Ascent.Theme.Sidebar, Size = UDim2.new(0, 10, 1, 0), Position = UDim2.new(1, -10, 0, 0), BorderSizePixel = 0})
+    if Config.Acrylic then Sidebar.BackgroundTransparency = 0.3 end
 
     local Controls = Create("Frame", {Parent = Sidebar, BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 50)})
     local C, M, MX = Create("ImageButton", {Parent = Controls, BackgroundColor3 = Ascent.Theme.TrafficRed, Position = UDim2.new(0, 18, 0, 18), Size = UDim2.new(0, 12, 0, 12), AutoButtonColor = false}), Create("ImageButton", {Parent = Controls, BackgroundColor3 = Ascent.Theme.TrafficYellow, Position = UDim2.new(0, 38, 0, 18), Size = UDim2.new(0, 12, 0, 12), AutoButtonColor = false}), Create("ImageButton", {Parent = Controls, BackgroundColor3 = Ascent.Theme.TrafficGreen, Position = UDim2.new(0, 58, 0, 18), Size = UDim2.new(0, 12, 0, 12), AutoButtonColor = false})
     for _, b in pairs({C, M, MX}) do Create("UICorner", {Parent = b, CornerRadius = UDim.new(1,0)}) end
-    C.MouseButton1Click:Connect(function() Ascent.IsVisible = false; Main.Visible = false; Ascent.MinimizeBtnRef.Visible = true end)
+    C.MouseButton1Click:Connect(function() Ascent.IsVisible = false; Main.Visible = false; Ascent.MinimizeBtnRef.Visible = true; Ascent:ToggleBlur(false) end)
     
     Create("TextLabel", {Parent = Sidebar, BackgroundTransparency = 1, Position = UDim2.new(0, 20, 0, 50), Size = UDim2.new(1, -20, 0, 30), Text = Config.Title or "Ascent Lib", Font = Enum.Font.GothamBold, TextColor3 = Ascent.Theme.Text, TextSize = 18, TextXAlignment = Enum.TextXAlignment.Left})
     local TabHolder = Create("ScrollingFrame", {Parent = Sidebar, BackgroundTransparency = 1, Position = UDim2.new(0, 10, 0, 90), Size = UDim2.new(1, -20, 1, -140), CanvasSize = UDim2.new(0,0,0,0), AutomaticCanvasSize = Enum.AutomaticSize.Y, ScrollBarThickness = 0}); Create("UIListLayout", {Parent = TabHolder, SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 5)})
@@ -388,7 +473,6 @@ function Ascent:CreateWindow(Config)
     local Window = {}
     local FirstTab = true
 
-    -- TAB & GROUP LOGIC
     local function CreateTabLogic(Name, IconId, ParentList, ParentPage)
         local Tab = {Elements = {}}
         local Page = Create("ScrollingFrame", {Name = Name, Parent = ParentPage, BackgroundTransparency = 1, Size = UDim2.new(1, 0, 1, 0), Visible = false, CanvasSize = UDim2.new(0,0,0,0), AutomaticCanvasSize = Enum.AutomaticSize.Y, ScrollBarThickness = 4, ScrollBarImageColor3 = Ascent.Theme.Divider}); Create("UIListLayout", {Parent = Page, SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 10)}); Create("UIPadding", {Parent = Page, PaddingTop = UDim.new(0, 20), PaddingLeft = UDim.new(0, 20), PaddingRight = UDim.new(0, 20), PaddingBottom = UDim.new(0, 20)})
