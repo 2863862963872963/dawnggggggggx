@@ -17,6 +17,15 @@ local MovementModule = {}
 -- Store active movements per character
 local activeMovements = {}
 
+-- Helper to clone options so we don't modify the user's table
+local function cloneTable(t)
+    local new = {}
+    if t then
+        for k, v in pairs(t) do new[k] = v end
+    end
+    return new
+end
+
 --[[
     ========================================
     PATHFINDING MOVEMENT
@@ -38,11 +47,15 @@ local activeMovements = {}
         - OnWaypoint: function(index, waypoint, total)
         - OnComplete: function()
         - OnFailed: function(reason)
+        - MaxRetries: number (default 3) -- New option to prevent infinite loops
     
     @return boolean - true if path completed, false if failed/cancelled
 ]]
 function MovementModule.PathfindTo(character, targetPosition, options)
-    options = options or {}
+    -- Clone options to safely track internal state like retries
+    options = cloneTable(options)
+    options.Retries = options.Retries or 0
+    local maxRetries = options.MaxRetries or 3
     
     local humanoid = character:FindFirstChildOfClass("Humanoid")
     local rootPart = character:FindFirstChild("HumanoidRootPart")
@@ -52,6 +65,12 @@ function MovementModule.PathfindTo(character, targetPosition, options)
         if options.OnFailed then 
             options.OnFailed("Missing character components") 
         end
+        return false
+    end
+    
+    -- Check if character is dead
+    if humanoid.Health <= 0 then
+        if options.OnFailed then options.OnFailed("Character is dead") end
         return false
     end
     
@@ -91,6 +110,7 @@ function MovementModule.PathfindTo(character, targetPosition, options)
     end
     
     if path.Status ~= Enum.PathStatus.Success then
+        -- Don't retry immediately if no path found, just fail
         warn("MovementModule: No valid path found")
         activeMovements[character] = nil
         if options.OnFailed then 
@@ -111,6 +131,14 @@ function MovementModule.PathfindTo(character, targetPosition, options)
         
         -- Path blocked, attempt to recompute
         blockedConnection:Disconnect()
+        
+        -- Check retry limit for blocked paths too
+        if options.Retries >= maxRetries then
+            if options.OnFailed then options.OnFailed("Path blocked and max retries exceeded") end
+            return
+        end
+        
+        options.Retries = options.Retries + 1
         MovementModule.PathfindTo(character, targetPosition, options)
     end)
     
@@ -118,6 +146,12 @@ function MovementModule.PathfindTo(character, targetPosition, options)
     for i, waypoint in pairs(waypoints) do
         -- Check if movement was cancelled
         if movementData.cancelled then
+            blockedConnection:Disconnect()
+            return false
+        end
+        
+        -- Check if character died during movement
+        if humanoid.Health <= 0 then
             blockedConnection:Disconnect()
             return false
         end
@@ -135,8 +169,9 @@ function MovementModule.PathfindTo(character, targetPosition, options)
             options.OnWaypoint(i, waypoint, #waypoints)
         end
         
-        -- Wait for movement to complete (with timeout)
-        local reachedWaypoint = humanoid.MoveToFinished:Wait(1)
+        -- Wait for movement to complete
+        -- FIX: Removed incorrect timeout argument '1'
+        local reachedWaypoint = humanoid.MoveToFinished:Wait()
         
         -- Check again after waiting
         if movementData.cancelled then
@@ -144,9 +179,25 @@ function MovementModule.PathfindTo(character, targetPosition, options)
             return false
         end
         
-        -- If stuck, try to recompute path
+        -- If stuck or interrupted (e.g. player walked), try to recompute path
         if not reachedWaypoint then
             blockedConnection:Disconnect()
+            
+            -- FIX: Infinite recursion check
+            if options.Retries >= maxRetries then
+                warn("MovementModule: Movement failed (Max retries exceeded)")
+                activeMovements[character] = nil
+                if options.OnFailed then
+                    options.OnFailed("Interrupted or Stuck")
+                end
+                return false
+            end
+            
+            -- Add a small delay to prevent hot loops if the player is holding a key
+            task.wait(0.2)
+            
+            -- Increase retry count and recurse
+            options.Retries = options.Retries + 1
             return MovementModule.PathfindTo(character, targetPosition, options)
         end
     end
@@ -204,7 +255,12 @@ function MovementModule.TweenTo(character, target, options)
         if options.RotateToTarget then
             -- Face the target direction
             local direction = (target - rootPart.Position).Unit
-            targetCFrame = CFrame.new(target, target + direction)
+            -- Prevent NaN if target is same as current position
+            if direction.Magnitude > 0 then
+                targetCFrame = CFrame.new(target, target + direction)
+            else
+                targetCFrame = CFrame.new(target) * (rootPart.CFrame - rootPart.CFrame.Position)
+            end
         elseif options.TargetOrientation then
             targetCFrame = options.TargetOrientation
         else
