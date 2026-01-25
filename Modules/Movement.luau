@@ -1,569 +1,502 @@
 --[[
-    MovementModule.lua
-    Comprehensive movement system with pathfinding, tweening, and teleportation
-    
-    Usage:
-        local MovementModule = require(game.ReplicatedStorage.MovementModule)
-        MovementModule.PathfindTo(character, targetPosition, options)
-        MovementModule.TweenTo(character, targetPosition, options)
-        MovementModule.Teleport(character, targetPosition, options)
+    MovementModule with Blacklist Avoidance
+    Tránh các vật cản trong blacklist khi di chuyển
 ]]
 
-local PathfindingService = game:GetService("PathfindingService")
-local TweenService = game:GetService("TweenService")
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
 
 local MovementModule = {}
 
--- Store active movements per character
-local activeMovements = {}
+-- Store active movements
+local activeWalks = {}
 
--- Helper to clone options so we don't modify the user's table
-local function cloneTable(t)
-    local new = {}
-    if t then
-        for k, v in pairs(t) do new[k] = v end
+-- Blacklist settings
+local blacklist = {
+    parts = {},      -- Specific parts to avoid
+    names = {},      -- Part names to avoid
+    models = {},     -- Specific models to avoid
+    classes = {},    -- Class names to avoid (e.g., "TrussPart")
+    materials = {},  -- Materials to avoid (e.g., Enum.Material.Lava)
+    tags = {}        -- CollectionService tags to avoid
+}
+
+local avoidanceDistance = 5 -- Distance to keep from blacklisted objects
+
+--[[
+    ========================================
+    BLACKLIST MANAGEMENT
+    ========================================
+]]
+
+--[[
+    AddToBlacklist - Adds an object or pattern to blacklist
+    
+    @param item - Part, Model, string (name), Enum (material), etc.
+    @param type - "part", "name", "model", "class", "material", "tag" (auto-detect if nil)
+]]
+function MovementModule.AddToBlacklist(item, type)
+    if not type then
+        -- Auto-detect type
+        if typeof(item) == "Instance" then
+            if item:IsA("Model") then
+                type = "model"
+            else
+                type = "part"
+            end
+        elseif typeof(item) == "string" then
+            type = "name"
+        elseif typeof(item) == "EnumItem" then
+            type = "material"
+        end
     end
-    return new
+    
+    if type == "part" then
+        table.insert(blacklist.parts, item)
+    elseif type == "name" then
+        table.insert(blacklist.names, item)
+    elseif type == "model" then
+        table.insert(blacklist.models, item)
+    elseif type == "class" then
+        table.insert(blacklist.classes, item)
+    elseif type == "material" then
+        table.insert(blacklist.materials, item)
+    elseif type == "tag" then
+        table.insert(blacklist.tags, item)
+    end
+end
+
+--[[
+    RemoveFromBlacklist - Removes from blacklist
+    
+    @param item - Item to remove
+    @param type - Blacklist type
+]]
+function MovementModule.RemoveFromBlacklist(item, type)
+    local list = blacklist[type .. "s"] or blacklist[type]
+    
+    if list then
+        for i, v in pairs(list) do
+            if v == item then
+                table.remove(list, i)
+                return true
+            end
+        end
+    end
+    
+    return false
+end
+
+--[[
+    ClearBlacklist - Clears entire blacklist or specific type
+    
+    @param type - Optional type to clear (nil = clear all)
+]]
+function MovementModule.ClearBlacklist(type)
+    if type then
+        blacklist[type .. "s"] = {}
+    else
+        blacklist = {
+            parts = {},
+            names = {},
+            models = {},
+            classes = {},
+            materials = {},
+            tags = {}
+        }
+    end
+end
+
+--[[
+    SetAvoidanceDistance - Sets how far to stay from blacklisted objects
+    
+    @param distance - Distance in studs
+]]
+function MovementModule.SetAvoidanceDistance(distance)
+    avoidanceDistance = distance
+end
+
+--[[
+    IsBlacklisted - Checks if a part is blacklisted
+    
+    @param part - Part to check
+    @return boolean
+]]
+function MovementModule.IsBlacklisted(part)
+    if not part or not part:IsA("BasePart") then
+        return false
+    end
+    
+    -- Check specific parts
+    for _, blacklistedPart in pairs(blacklist.parts) do
+        if part == blacklistedPart then
+            return true
+        end
+    end
+    
+    -- Check names
+    for _, name in pairs(blacklist.names) do
+        if part.Name:lower():match(name:lower()) then
+            return true
+        end
+    end
+    
+    -- Check parent models
+    local model = part.Parent
+    if model and model:IsA("Model") then
+        for _, blacklistedModel in pairs(blacklist.models) do
+            if model == blacklistedModel then
+                return true
+            end
+        end
+    end
+    
+    -- Check class
+    for _, className in pairs(blacklist.classes) do
+        if part:IsA(className) then
+            return true
+        end
+    end
+    
+    -- Check material
+    for _, material in pairs(blacklist.materials) do
+        if part.Material == material then
+            return true
+        end
+    end
+    
+    -- Check tags (CollectionService)
+    local CollectionService = game:GetService("CollectionService")
+    for _, tag in pairs(blacklist.tags) do
+        if CollectionService:HasTag(part, tag) then
+            return true
+        end
+    end
+    
+    return false
 end
 
 --[[
     ========================================
-    PATHFINDING MOVEMENT
+    AVOIDANCE DETECTION
     ========================================
 ]]
 
 --[[
-    PathfindTo - Moves a character using pathfinding with obstacle avoidance
+    GetNearbyBlacklistedObjects - Gets blacklisted objects near a position
     
-    @param character - Model with Humanoid and HumanoidRootPart
-    @param targetPosition - Vector3 destination
-    @param options - Optional table with:
-        - Costs: table of cost values {Water = 10, Lava = math.huge}
-        - AgentRadius: number (default 2)
-        - AgentHeight: number (default 5)
-        - AgentCanJump: boolean (default true)
-        - AgentCanClimb: boolean (default false)
-        - WaypointSpacing: number (default 4)
-        - OnWaypoint: function(index, waypoint, total)
-        - OnComplete: function()
-        - OnFailed: function(reason)
-        - MaxRetries: number (default 3) -- New option to prevent infinite loops
-    
-    @return boolean - true if path completed, false if failed/cancelled
+    @param position - Vector3 position
+    @param radius - Search radius
+    @return table - Array of {part, distance}
 ]]
-function MovementModule.PathfindTo(character, targetPosition, options)
-    -- Clone options to safely track internal state like retries
-    options = cloneTable(options)
-    options.Retries = options.Retries or 0
-    local maxRetries = options.MaxRetries or 3
+function MovementModule.GetNearbyBlacklistedObjects(position, radius)
+    radius = radius or avoidanceDistance * 2
+    local nearby = {}
+    
+    local region = Region3.new(
+        position - Vector3.new(radius, radius, radius),
+        position + Vector3.new(radius, radius, radius)
+    )
+    region = region:ExpandToGrid(4)
+    
+    local parts = workspace:FindPartsInRegion3(region, nil, math.huge)
+    
+    for _, part in pairs(parts) do
+        if MovementModule.IsBlacklisted(part) then
+            local distance = (part.Position - position).Magnitude
+            
+            if distance <= radius then
+                table.insert(nearby, {
+                    part = part,
+                    distance = distance
+                })
+            end
+        end
+    end
+    
+    -- Sort by distance
+    table.sort(nearby, function(a, b)
+        return a.distance < b.distance
+    end)
+    
+    return nearby
+end
+
+--[[
+    IsSafePosition - Checks if a position is safe (no blacklisted objects nearby)
+    
+    @param position - Vector3 position
+    @param checkRadius - Optional radius (default: avoidanceDistance)
+    @return boolean, table - isSafe, nearbyThreats
+]]
+function MovementModule.IsSafePosition(position, checkRadius)
+    checkRadius = checkRadius or avoidanceDistance
+    local nearby = MovementModule.GetNearbyBlacklistedObjects(position, checkRadius)
+    
+    return #nearby == 0, nearby
+end
+
+--[[
+    GetSafeDirection - Gets a safe direction away from blacklisted objects
+    
+    @param position - Current position
+    @param targetDirection - Desired direction (Unit vector)
+    @return Vector3 - Safe direction (or original if safe)
+]]
+function MovementModule.GetSafeDirection(position, targetDirection)
+    local nearby = MovementModule.GetNearbyBlacklistedObjects(position, avoidanceDistance * 2)
+    
+    if #nearby == 0 then
+        return targetDirection
+    end
+    
+    -- Calculate avoidance vector
+    local avoidanceVector = Vector3.new(0, 0, 0)
+    
+    for _, threat in pairs(nearby) do
+        local directionAway = (position - threat.part.Position).Unit
+        local strength = 1 - (threat.distance / (avoidanceDistance * 2))
+        
+        avoidanceVector = avoidanceVector + (directionAway * strength)
+    end
+    
+    -- Blend target direction with avoidance
+    local blendedDirection = (targetDirection + avoidanceVector).Unit
+    
+    return blendedDirection
+end
+
+--[[
+    ========================================
+    WALKING WITH AVOIDANCE
+    ========================================
+]]
+
+--[[
+    WalkTo - Walks to position while avoiding blacklisted objects
+    
+    @param character - Character model
+    @param targetPosition - Vector3 destination
+    @param options - Optional table:
+        - Timeout: number
+        - StopDistance: number
+        - AvoidBlacklist: boolean (default true)
+        - StuckThreshold: number
+        - AutoRetry: boolean
+        - OnReached: function()
+        - OnFailed: function()
+        - OnStuck: function()
+        - OnAvoidance: function(threat) - Called when avoiding
+]]
+function MovementModule.WalkTo(character, targetPosition, options)
+    options = options or {}
     
     local humanoid = character:FindFirstChildOfClass("Humanoid")
     local rootPart = character:FindFirstChild("HumanoidRootPart")
     
     if not humanoid or not rootPart then
-        warn("MovementModule: Character missing Humanoid or HumanoidRootPart")
-        if options.OnFailed then 
-            options.OnFailed("Missing character components") 
+        warn("MovementModule: Missing Humanoid or HumanoidRootPart")
+        if options.OnFailed then
+            options.OnFailed("Missing components")
         end
         return false
     end
     
-    -- Check if character is dead
-    if humanoid.Health <= 0 then
-        if options.OnFailed then options.OnFailed("Character is dead") end
-        return false
-    end
+    MovementModule.StopWalk(character)
     
-    -- Cancel any existing movement for this character
-    MovementModule.Stop(character)
-    
-    -- Create new movement tracker
-    local movementData = {
+    local walkData = {
         cancelled = false,
         startTime = tick(),
-        type = "pathfind"
+        timeout = options.Timeout,
+        lastPosition = rootPart.Position,
+        stuckTime = 0,
+        stuckThreshold = options.StuckThreshold or 3,
+        stopDistance = options.StopDistance or 4,
+        autoRetry = options.AutoRetry ~= false,
+        avoidBlacklist = options.AvoidBlacklist ~= false
     }
-    activeMovements[character] = movementData
+    activeWalks[character] = walkData
     
-    -- Create path with parameters
-    local path = PathfindingService:CreatePath({
-        AgentRadius = options.AgentRadius or 2,
-        AgentHeight = options.AgentHeight or 5,
-        AgentCanJump = options.AgentCanJump ~= false,
-        AgentCanClimb = options.AgentCanClimb or false,
-        WaypointSpacing = options.WaypointSpacing or 4,
-        Costs = options.Costs or {}
-    })
+    humanoid:MoveTo(targetPosition)
     
-    -- Compute path
-    local success, errorMessage = pcall(function()
-        path:ComputeAsync(rootPart.Position, targetPosition)
-    end)
-    
-    if not success then
-        warn("MovementModule: Path computation error:", errorMessage)
-        activeMovements[character] = nil
-        if options.OnFailed then 
-            options.OnFailed(errorMessage) 
-        end
-        return false
-    end
-    
-    if path.Status ~= Enum.PathStatus.Success then
-        -- Don't retry immediately if no path found, just fail
-        warn("MovementModule: No valid path found")
-        activeMovements[character] = nil
-        if options.OnFailed then 
-            options.OnFailed("No valid path") 
-        end
-        return false
-    end
-    
-    local waypoints = path:GetWaypoints()
-    
-    -- Handle path blocked (recompute if blocked)
-    local blockedConnection
-    blockedConnection = path.Blocked:Connect(function(blockedWaypointIndex)
-        if movementData.cancelled then
-            blockedConnection:Disconnect()
-            return
-        end
+    task.spawn(function()
+        local moveConnection
+        local timeoutConnection
         
-        -- Path blocked, attempt to recompute
-        blockedConnection:Disconnect()
-        
-        -- Check retry limit for blocked paths too
-        if options.Retries >= maxRetries then
-            if options.OnFailed then options.OnFailed("Path blocked and max retries exceeded") end
-            return
-        end
-        
-        options.Retries = options.Retries + 1
-        MovementModule.PathfindTo(character, targetPosition, options)
-    end)
-    
-    -- Move through waypoints
-    for i, waypoint in pairs(waypoints) do
-        -- Check if movement was cancelled
-        if movementData.cancelled then
-            blockedConnection:Disconnect()
-            return false
-        end
-        
-        -- Check if character died during movement
-        if humanoid.Health <= 0 then
-            blockedConnection:Disconnect()
-            return false
-        end
-        
-        -- Handle jump waypoints
-        if waypoint.Action == Enum.PathWaypointAction.Jump then
-            humanoid.Jump = true
-        end
-        
-        -- Move to waypoint
-        humanoid:MoveTo(waypoint.Position)
-        
-        -- Callback for each waypoint
-        if options.OnWaypoint then
-            options.OnWaypoint(i, waypoint, #waypoints)
-        end
-        
-        -- Wait for movement to complete
-        -- FIX: Removed incorrect timeout argument '1'
-        local reachedWaypoint = humanoid.MoveToFinished:Wait()
-        
-        -- Check again after waiting
-        if movementData.cancelled then
-            blockedConnection:Disconnect()
-            return false
-        end
-        
-        -- If stuck or interrupted (e.g. player walked), try to recompute path
-        if not reachedWaypoint then
-            blockedConnection:Disconnect()
-            
-            -- FIX: Infinite recursion check
-            if options.Retries >= maxRetries then
-                warn("MovementModule: Movement failed (Max retries exceeded)")
-                activeMovements[character] = nil
-                if options.OnFailed then
-                    options.OnFailed("Interrupted or Stuck")
+        -- Timeout handler
+        if walkData.timeout then
+            timeoutConnection = task.delay(walkData.timeout, function()
+                if activeWalks[character] == walkData then
+                    activeWalks[character] = nil
+                    
+                    if moveConnection then
+                        moveConnection:Disconnect()
+                    end
+                    
+                    if options.OnTimeout then
+                        options.OnTimeout()
+                    end
                 end
-                return false
+            end)
+        end
+        
+        -- Movement completion
+        moveConnection = humanoid.MoveToFinished:Connect(function(reached)
+            if activeWalks[character] ~= walkData then
+                return
             end
             
-            -- Add a small delay to prevent hot loops if the player is holding a key
-            task.wait(0.2)
+            activeWalks[character] = nil
             
-            -- Increase retry count and recurse
-            options.Retries = options.Retries + 1
-            return MovementModule.PathfindTo(character, targetPosition, options)
-        end
-    end
-    
-    -- Clean up
-    blockedConnection:Disconnect()
-    activeMovements[character] = nil
-    
-    -- Success callback
-    if options.OnComplete then
-        options.OnComplete()
-    end
-    
-    return true
-end
-
---[[
-    ========================================
-    TWEEN MOVEMENT
-    ========================================
-]]
-
---[[
-    TweenTo - Smoothly tweens a character to a position (ignores obstacles)
-    
-    @param character - Model with HumanoidRootPart
-    @param targetPosition - Vector3 destination OR CFrame
-    @param options - Optional table with:
-        - Duration: number (default 1)
-        - EasingStyle: Enum.EasingStyle (default Linear)
-        - EasingDirection: Enum.EasingDirection (default Out)
-        - RotateToTarget: boolean (default false) - face the target
-        - TargetOrientation: CFrame (optional) - specific rotation
-        - OnComplete: function()
-        - OnCancelled: function()
-    
-    @return Tween - the tween instance (can be used to cancel)
-]]
-function MovementModule.TweenTo(character, target, options)
-    options = options or {}
-    
-    local rootPart = character:FindFirstChild("HumanoidRootPart")
-    
-    if not rootPart then
-        warn("MovementModule: Character missing HumanoidRootPart")
-        return nil
-    end
-    
-    -- Cancel any existing movement
-    MovementModule.Stop(character)
-    
-    -- Determine target CFrame
-    local targetCFrame
-    if typeof(target) == "Vector3" then
-        if options.RotateToTarget then
-            -- Face the target direction
-            local direction = (target - rootPart.Position).Unit
-            -- Prevent NaN if target is same as current position
-            if direction.Magnitude > 0 then
-                targetCFrame = CFrame.new(target, target + direction)
+            if timeoutConnection then
+                task.cancel(timeoutConnection)
+            end
+            
+            moveConnection:Disconnect()
+            
+            if reached then
+                if options.OnReached then
+                    options.OnReached()
+                end
             else
-                targetCFrame = CFrame.new(target) * (rootPart.CFrame - rootPart.CFrame.Position)
+                if options.OnFailed then
+                    options.OnFailed("Did not reach destination")
+                end
             end
-        elseif options.TargetOrientation then
-            targetCFrame = options.TargetOrientation
-        else
-            -- Keep current rotation
-            targetCFrame = CFrame.new(target) * (rootPart.CFrame - rootPart.CFrame.Position)
-        end
-    elseif typeof(target) == "CFrame" then
-        targetCFrame = target
-    else
-        warn("MovementModule: Invalid target type, must be Vector3 or CFrame")
-        return nil
-    end
-    
-    -- Create tween info
-    local tweenInfo = TweenInfo.new(
-        options.Duration or 1,
-        options.EasingStyle or Enum.EasingStyle.Linear,
-        options.EasingDirection or Enum.EasingDirection.Out,
-        0, -- RepeatCount
-        false, -- Reverses
-        0 -- DelayTime
-    )
-    
-    -- Create tween
-    local tween = TweenService:Create(rootPart, tweenInfo, {CFrame = targetCFrame})
-    
-    -- Track movement
-    local movementData = {
-        cancelled = false,
-        startTime = tick(),
-        type = "tween",
-        tween = tween
-    }
-    activeMovements[character] = movementData
-    
-    -- Handle completion
-    tween.Completed:Connect(function(playbackState)
-        if activeMovements[character] == movementData then
-            activeMovements[character] = nil
-        end
+        end)
         
-        if playbackState == Enum.PlaybackState.Completed then
-            if options.OnComplete then
-                options.OnComplete()
-            end
-        elseif playbackState == Enum.PlaybackState.Cancelled then
-            if options.OnCancelled then
-                options.OnCancelled()
-            end
-        end
-    end)
-    
-    -- Play tween
-    tween:Play()
-    
-    return tween
-end
-
---[[
-    TweenModel - Tweens an entire model (not just HumanoidRootPart)
-    Useful for moving platforms, vehicles, etc.
-    
-    @param model - Model to tween
-    @param targetCFrame - CFrame destination
-    @param options - Same as TweenTo
-]]
-function MovementModule.TweenModel(model, targetCFrame, options)
-    options = options or {}
-    
-    local primaryPart = model.PrimaryPart
-    if not primaryPart then
-        warn("MovementModule: Model has no PrimaryPart set")
-        return nil
-    end
-    
-    -- Create tween info
-    local tweenInfo = TweenInfo.new(
-        options.Duration or 1,
-        options.EasingStyle or Enum.EasingStyle.Linear,
-        options.EasingDirection or Enum.EasingDirection.Out
-    )
-    
-    -- Tween using PivotTo for smooth model movement
-    local tween = TweenService:Create(primaryPart, tweenInfo, {CFrame = targetCFrame})
-    
-    tween.Completed:Connect(function(playbackState)
-        if playbackState == Enum.PlaybackState.Completed then
-            if options.OnComplete then
-                options.OnComplete()
-            end
-        end
-    end)
-    
-    tween:Play()
-    return tween
-end
-
---[[
-    ========================================
-    TELEPORTATION
-    ========================================
-]]
-
---[[
-    Teleport - Instantly teleports a character to a position
-    
-    @param character - Model with HumanoidRootPart
-    @param target - Vector3 or CFrame destination
-    @param options - Optional table with:
-        - PreserveMomentum: boolean (default false)
-        - FadeEffect: boolean (default false)
-        - FadeDuration: number (default 0.3)
-        - Sound: Sound instance or sound ID
-        - OnComplete: function()
-    
-    @return boolean - success
-]]
-function MovementModule.Teleport(character, target, options)
-    options = options or {}
-    
-    local rootPart = character:FindFirstChild("HumanoidRootPart")
-    local humanoid = character:FindFirstChildOfClass("Humanoid")
-    
-    if not rootPart then
-        warn("MovementModule: Character missing HumanoidRootPart")
-        return false
-    end
-    
-    -- Cancel any existing movement
-    MovementModule.Stop(character)
-    
-    -- Store velocity if preserving momentum
-    local velocity = nil
-    if options.PreserveMomentum and rootPart:IsA("BasePart") then
-        velocity = rootPart.AssemblyLinearVelocity
-    end
-    
-    -- Fade effect
-    if options.FadeEffect and humanoid then
-        local fadeDuration = options.FadeDuration or 0.3
+        -- Main loop with avoidance
+        local lastCheckTime = tick()
         
-        -- Fade out
-        for _, part in pairs(character:GetDescendants()) do
-            if part:IsA("BasePart") or part:IsA("Decal") then
-                TweenService:Create(part, TweenInfo.new(fadeDuration), {
-                    Transparency = 1
-                }):Play()
-            end
-        end
-        
-        task.wait(fadeDuration)
-    end
-    
-    -- Perform teleport
-    if typeof(target) == "Vector3" then
-        rootPart.CFrame = CFrame.new(target)
-    elseif typeof(target) == "CFrame" then
-        rootPart.CFrame = target
-    else
-        warn("MovementModule: Invalid target type for teleport")
-        return false
-    end
-    
-    -- Restore velocity
-    if velocity then
-        rootPart.AssemblyLinearVelocity = velocity
-    end
-    
-    -- Play sound
-    if options.Sound then
-        local sound
-        if typeof(options.Sound) == "Instance" and options.Sound:IsA("Sound") then
-            sound = options.Sound:Clone()
-        elseif typeof(options.Sound) == "number" or typeof(options.Sound) == "string" then
-            sound = Instance.new("Sound")
-            sound.SoundId = "rbxassetid://" .. tostring(options.Sound)
-        end
-        
-        if sound then
-            sound.Parent = rootPart
-            sound:Play()
-            game:GetService("Debris"):AddItem(sound, sound.TimeLength + 0.1)
-        end
-    end
-    
-    -- Fade back in
-    if options.FadeEffect and humanoid then
-        local fadeDuration = options.FadeDuration or 0.3
-        
-        for _, part in pairs(character:GetDescendants()) do
-            if part:IsA("BasePart") then
-                local originalTransparency = 0
-                if part.Name == "HumanoidRootPart" then
-                    originalTransparency = 1
+        while activeWalks[character] == walkData and rootPart do
+            local currentPos = rootPart.Position
+            local distance = (currentPos - targetPosition).Magnitude
+            
+            -- Check if reached
+            if distance <= walkData.stopDistance then
+                activeWalks[character] = nil
+                
+                if moveConnection then
+                    moveConnection:Disconnect()
+                end
+                if timeoutConnection then
+                    task.cancel(timeoutConnection)
                 end
                 
-                TweenService:Create(part, TweenInfo.new(fadeDuration), {
-                    Transparency = originalTransparency
-                }):Play()
-            elseif part:IsA("Decal") then
-                TweenService:Create(part, TweenInfo.new(fadeDuration), {
-                    Transparency = 0
-                }):Play()
+                if options.OnReached then
+                    options.OnReached()
+                end
+                break
             end
+            
+            -- Blacklist avoidance
+            if walkData.avoidBlacklist then
+                local isSafe, threats = MovementModule.IsSafePosition(currentPos, avoidanceDistance)
+                
+                if not isSafe then
+                    -- Get safe direction
+                    local targetDirection = (targetPosition - currentPos).Unit
+                    local safeDirection = MovementModule.GetSafeDirection(currentPos, targetDirection)
+                    
+                    -- Move in safe direction
+                    local safePosition = currentPos + (safeDirection * 10)
+                    humanoid:MoveTo(safePosition)
+                    
+                    if options.OnAvoidance then
+                        options.OnAvoidance(threats[1])
+                    end
+                else
+                    -- Re-target if we diverted
+                    humanoid:MoveTo(targetPosition)
+                end
+            end
+            
+            -- Stuck detection
+            local timeDelta = tick() - lastCheckTime
+            local positionDelta = (currentPos - walkData.lastPosition).Magnitude
+            
+            if positionDelta < 0.5 then
+                walkData.stuckTime = walkData.stuckTime + timeDelta
+                
+                if walkData.stuckTime >= walkData.stuckThreshold then
+                    if walkData.autoRetry then
+                        humanoid.Jump = true
+                        task.wait(0.5)
+                        humanoid:MoveTo(targetPosition)
+                        walkData.stuckTime = 0
+                    else
+                        activeWalks[character] = nil
+                        
+                        if moveConnection then
+                            moveConnection:Disconnect()
+                        end
+                        if timeoutConnection then
+                            task.cancel(timeoutConnection)
+                        end
+                        
+                        if options.OnStuck then
+                            options.OnStuck()
+                        elseif options.OnFailed then
+                            options.OnFailed("Character stuck")
+                        end
+                        break
+                    end
+                end
+            else
+                walkData.stuckTime = 0
+            end
+            
+            walkData.lastPosition = currentPos
+            lastCheckTime = tick()
+            
+            task.wait(0.3)
         end
-    end
-    
-    -- Complete callback
-    if options.OnComplete then
-        options.OnComplete()
-    end
+    end)
     
     return true
 end
 
 --[[
-    ========================================
-    UTILITY FUNCTIONS
-    ========================================
+    StopWalk - Stops walking
 ]]
-
---[[
-    Stop - Stops any active movement for a character
-    
-    @param character - The character to stop
-]]
-function MovementModule.Stop(character)
-    if activeMovements[character] then
-        local movementData = activeMovements[character]
-        movementData.cancelled = true
-        
-        -- If it's a tween, cancel it
-        if movementData.type == "tween" and movementData.tween then
-            movementData.tween:Cancel()
-        end
-        
-        activeMovements[character] = nil
+function MovementModule.StopWalk(character)
+    if activeWalks[character] then
+        activeWalks[character].cancelled = true
+        activeWalks[character] = nil
     end
     
-    -- Stop humanoid movement
     local humanoid = character:FindFirstChildOfClass("Humanoid")
-    if humanoid then
-        local rootPart = character:FindFirstChild("HumanoidRootPart")
-        if rootPart then
-            humanoid:MoveTo(rootPart.Position)
-        end
+    local rootPart = character:FindFirstChild("HumanoidRootPart")
+    
+    if humanoid and rootPart then
+        humanoid:MoveTo(rootPart.Position)
     end
 end
 
 --[[
-    IsMoving - Check if a character is currently moving
-    
-    @param character - The character to check
-    @return boolean - true if currently moving
+    IsWalking - Check if walking
 ]]
-function MovementModule.IsMoving(character)
-    return activeMovements[character] ~= nil
+function MovementModule.IsWalking(character)
+    return activeWalks[character] ~= nil
 end
 
 --[[
-    GetMovementType - Get the type of movement currently active
-    
-    @param character - The character to check
-    @return string|nil - "pathfind", "tween", or nil
-]]
-function MovementModule.GetMovementType(character)
-    if activeMovements[character] then
-        return activeMovements[character].type
-    end
-    return nil
-end
-
---[[
-    GetMovementTime - Get how long a character has been moving
-    
-    @param character - The character to check
-    @return number|nil - seconds elapsed, or nil if not moving
-]]
-function MovementModule.GetMovementTime(character)
-    if activeMovements[character] then
-        return tick() - activeMovements[character].startTime
-    end
-    return nil
-end
-
---[[
-    GetDistance - Calculate distance between character and target
-    
-    @param character - The character
-    @param target - Vector3 or Model with PrimaryPart/HumanoidRootPart
-    @return number|nil - distance in studs
+    GetDistance - Get distance to target
 ]]
 function MovementModule.GetDistance(character, target)
     local rootPart = character:FindFirstChild("HumanoidRootPart")
     if not rootPart then return nil end
     
     local targetPos
+    
     if typeof(target) == "Vector3" then
         targetPos = target
     elseif typeof(target) == "Instance" then
-        local targetPart = target:FindFirstChild("HumanoidRootPart") or target:FindFirstChild("PrimaryPart") or target.PrimaryPart
-        if targetPart then
-            targetPos = targetPart.Position
+        if target:IsA("Model") then
+            local targetPart = target.PrimaryPart or target:FindFirstChild("HumanoidRootPart")
+            targetPos = targetPart and targetPart.Position
+        elseif target:IsA("BasePart") then
+            targetPos = target.Position
         end
     end
     
