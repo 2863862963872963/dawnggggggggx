@@ -1,0 +1,1052 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NovaUI — Roblox UI Library</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,300&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --glass-bg: rgba(255,255,255,0.06);
+    --glass-border: rgba(255,255,255,0.12);
+    --glass-blur: blur(24px);
+    --surface: rgba(18, 20, 35, 0.95);
+    --surface-2: rgba(28, 32, 55, 0.8);
+    --blue: #4F8EF7;
+    --blue-glow: rgba(79, 142, 247, 0.4);
+    --cyan: #38D9F5;
+    --purple: #8B5CF6;
+    --green: #34D399;
+    --red: #F87171;
+    --amber: #FBBF24;
+    --text: #E8ECFF;
+    --text-dim: rgba(200, 210, 240, 0.55);
+    --text-muted: rgba(200, 210, 240, 0.3);
+    --neu-shadow-out: 4px 4px 12px rgba(0,0,0,0.5), -2px -2px 8px rgba(255,255,255,0.04);
+    --neu-shadow-in: inset 3px 3px 8px rgba(0,0,0,0.5), inset -2px -2px 6px rgba(255,255,255,0.05);
+    --radius: 16px;
+    --radius-sm: 10px;
+    --dpi: 1;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  
+  body {
+    background: #0B0D1A;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── Background Scene ── */
+  .scene {
+    position: fixed; inset: 0; z-index: 0;
+    background:
+      radial-gradient(ellipse 80% 60% at 20% 10%, rgba(79,142,247,0.15) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 80% at 80% 90%, rgba(139,92,246,0.12) 0%, transparent 60%),
+      radial-gradient(ellipse 50% 50% at 60% 30%, rgba(56,217,245,0.08) 0%, transparent 50%),
+      linear-gradient(160deg, #0B0D1A 0%, #0D1128 40%, #0A0B18 100%);
+  }
+  .scene::after {
+    content: '';
+    position: absolute; inset: 0;
+    background-image: radial-gradient(rgba(255,255,255,0.03) 1px, transparent 1px);
+    background-size: 32px 32px;
+    mask-image: radial-gradient(ellipse at center, black 40%, transparent 80%);
+  }
+
+  /* ── Layout ── */
+  .wrapper {
+    position: relative; z-index: 1;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 32px 20px 80px;
+  }
+
+  /* ── Header ── */
+  .header {
+    text-align: center;
+    padding: 40px 0 48px;
+  }
+  .logo-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 100px;
+    padding: 6px 14px 6px 8px;
+    font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--text-dim); font-family: 'Space Mono', monospace;
+    backdrop-filter: var(--glass-blur);
+    margin-bottom: 20px;
+  }
+  .logo-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--blue);
+    box-shadow: 0 0 8px var(--blue);
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.6;transform:scale(0.85)} }
+
+  h1 {
+    font-size: clamp(36px, 7vw, 64px);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1.05;
+    background: linear-gradient(135deg, #fff 0%, rgba(79,142,247,0.9) 50%, rgba(139,92,246,0.8) 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 12px;
+  }
+  .header p {
+    color: var(--text-dim); font-size: 15px; max-width: 460px; margin: 0 auto;
+    line-height: 1.6;
+  }
+
+  /* ── Glass Panel ── */
+  .glass {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+  }
+
+  /* ── Demo Window ── */
+  .demo-window {
+    background: rgba(12, 14, 26, 0.85);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 20px;
+    backdrop-filter: blur(40px);
+    overflow: hidden;
+    box-shadow: 0 32px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04);
+    margin-bottom: 40px;
+  }
+  .demo-titlebar {
+    display: flex; align-items: center; gap: 8px;
+    padding: 14px 18px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    background: rgba(255,255,255,0.025);
+  }
+  .demo-titlebar-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+  }
+  .dot-red { background: #FF5F57; }
+  .dot-yellow { background: #FFBD2E; }
+  .dot-green { background: #28CA41; }
+  .demo-title-text {
+    flex: 1; text-align: center;
+    font-size: 11px; font-family: 'Space Mono', monospace;
+    color: var(--text-muted); letter-spacing: 0.05em;
+    margin-right: 46px;
+  }
+
+  /* ── Nova UI Panel (the actual UI library demo) ── */
+  .nova-panel {
+    padding: 16px;
+    background: rgba(16, 18, 32, 0.7);
+  }
+
+  .nova-container {
+    background: rgba(255,255,255,0.035);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 18px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* Hide Button */
+  .hide-btn {
+    position: absolute;
+    top: 12px; right: 12px; z-index: 100;
+    width: 28px; height: 28px;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+    color: var(--text-dim); font-size: 13px;
+  }
+  .hide-btn:hover { background: rgba(255,255,255,0.14); color: var(--text); }
+
+  .show-btn {
+    position: absolute;
+    top: 12px; right: 12px; z-index: 101;
+    padding: 6px 12px;
+    background: rgba(79,142,247,0.2);
+    border: 1px solid rgba(79,142,247,0.4);
+    border-radius: 8px;
+    cursor: pointer;
+    display: none;
+    align-items: center; gap: 6px;
+    transition: all 0.2s;
+    color: var(--blue); font-size: 12px; font-family: 'Space Mono', monospace;
+  }
+  .show-btn:hover { background: rgba(79,142,247,0.3); }
+
+  .nova-hidden .nova-content { display: none; }
+  .nova-hidden .show-btn { display: flex; }
+  .nova-hidden .hide-btn { display: none; }
+
+  /* Tabs */
+  .nova-tabs {
+    display: flex;
+    padding: 12px 12px 0;
+    gap: 4px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .nova-tab {
+    padding: 7px 14px;
+    font-size: 12px;
+    border-radius: 9px 9px 0 0;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: var(--text-muted);
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    border: none; background: transparent;
+    position: relative;
+  }
+  .nova-tab.active {
+    color: var(--text);
+    background: rgba(255,255,255,0.07);
+  }
+  .nova-tab.active::after {
+    content: '';
+    position: absolute; bottom: -1px; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--blue), transparent);
+  }
+
+  .nova-content {
+    padding: 14px;
+    display: flex; flex-direction: column; gap: 10px;
+  }
+
+  .tab-panel { display: none; flex-direction: column; gap: 10px; }
+  .tab-panel.active { display: flex; }
+
+  /* Module Card */
+  .nova-module {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 14px;
+    padding: 14px;
+    box-shadow: var(--neu-shadow-out);
+    transition: box-shadow 0.2s;
+  }
+  .nova-module:hover {
+    box-shadow: 4px 4px 16px rgba(0,0,0,0.6), -2px -2px 10px rgba(255,255,255,0.05),
+                0 0 0 1px rgba(79,142,247,0.15);
+  }
+
+  .module-header {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .module-info { flex: 1; min-width: 0; }
+  .module-title {
+    font-size: 13px; font-weight: 600; color: var(--text);
+    margin-bottom: 2px; letter-spacing: -0.01em;
+  }
+  .module-desc {
+    font-size: 11px; color: var(--text-dim); line-height: 1.4;
+  }
+
+  /* Toggle Switch */
+  .toggle-wrap {
+    display: flex; align-items: center; gap: 10px;
+  }
+  .toggle {
+    position: relative; width: 44px; height: 24px;
+    flex-shrink: 0; cursor: pointer;
+  }
+  .toggle input { display: none; }
+  .toggle-track {
+    width: 100%; height: 100%;
+    border-radius: 100px;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.1);
+    transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1);
+    box-shadow: var(--neu-shadow-in);
+  }
+  .toggle input:checked ~ .toggle-track {
+    background: var(--blue);
+    border-color: rgba(79,142,247,0.5);
+    box-shadow: var(--neu-shadow-in), 0 0 12px var(--blue-glow);
+  }
+  .toggle-thumb {
+    position: absolute;
+    top: 3px; left: 3px;
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.7);
+    transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+  }
+  .toggle input:checked ~ .toggle-thumb {
+    left: 23px;
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3), 0 0 6px rgba(79,142,247,0.5);
+  }
+  .toggle-label { font-size: 12px; color: var(--text-dim); }
+
+  /* Slider */
+  .nova-slider-wrap { margin-top: 4px; }
+  .slider-header { display: flex; justify-content: space-between; margin-bottom: 8px; }
+  .slider-name { font-size: 11px; color: var(--text-dim); }
+  .slider-val {
+    font-size: 11px; color: var(--blue);
+    font-family: 'Space Mono', monospace; font-weight: 700;
+  }
+  .nova-slider {
+    -webkit-appearance: none; appearance: none;
+    width: 100%; height: 6px;
+    border-radius: 100px;
+    outline: none; cursor: pointer;
+    background: rgba(255,255,255,0.08);
+    box-shadow: var(--neu-shadow-in);
+  }
+  .nova-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.4), 0 0 0 3px rgba(79,142,247,0.3);
+    transition: box-shadow 0.2s, transform 0.2s;
+    cursor: pointer;
+  }
+  .nova-slider:hover::-webkit-slider-thumb,
+  .nova-slider:active::-webkit-slider-thumb {
+    box-shadow: 0 2px 12px rgba(0,0,0,0.5), 0 0 0 4px rgba(79,142,247,0.5);
+    transform: scale(1.1);
+  }
+
+  /* Action Buttons */
+  .btn-group-label { font-size: 11px; color: var(--text-muted); margin-bottom: 8px; letter-spacing: 0.04em; text-transform: uppercase; }
+  .btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .icon-btn {
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: var(--neu-shadow-out);
+    color: var(--text-dim); font-size: 15px;
+    position: relative; overflow: hidden;
+  }
+  .icon-btn::before {
+    content: ''; position: absolute; inset: 0; border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, rgba(255,255,255,0.15), transparent 60%);
+  }
+  .icon-btn:hover {
+    background: rgba(255,255,255,0.1);
+    color: var(--text);
+    box-shadow: 4px 4px 14px rgba(0,0,0,0.5), -2px -2px 8px rgba(255,255,255,0.05);
+    transform: translateY(-1px);
+  }
+  .icon-btn.active {
+    background: var(--blue);
+    border-color: rgba(79,142,247,0.6);
+    color: white;
+    box-shadow: 0 4px 16px rgba(79,142,247,0.5), var(--neu-shadow-out);
+  }
+  .icon-btn.active-green { background: var(--green); border-color: rgba(52,211,153,0.6); color: #fff; box-shadow: 0 4px 16px rgba(52,211,153,0.4); }
+  .icon-btn.active-red { background: var(--red); border-color: rgba(248,113,113,0.6); color: #fff; box-shadow: 0 4px 16px rgba(248,113,113,0.4); }
+  .icon-btn.active-amber { background: var(--amber); border-color: rgba(251,191,36,0.6); color: #000; box-shadow: 0 4px 16px rgba(251,191,36,0.4); }
+
+  /* Two-column grid */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  /* Status badge */
+  .badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 10px; font-family: 'Space Mono', monospace;
+    padding: 3px 8px; border-radius: 100px;
+    letter-spacing: 0.04em;
+  }
+  .badge-blue { background: rgba(79,142,247,0.15); border: 1px solid rgba(79,142,247,0.3); color: var(--blue); }
+  .badge-green { background: rgba(52,211,153,0.15); border: 1px solid rgba(52,211,153,0.3); color: var(--green); }
+  .badge-dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+
+  /* DPI Control */
+  .dpi-control {
+    display: flex; align-items: center; gap: 10px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 12px;
+    padding: 10px 12px;
+  }
+  .dpi-label { font-size: 11px; color: var(--text-dim); flex: 1; }
+  .dpi-btns { display: flex; gap: 4px; }
+  .dpi-btn {
+    width: 26px; height: 26px;
+    border-radius: 7px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: var(--text-dim); font-size: 14px;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s;
+  }
+  .dpi-btn:hover { background: rgba(255,255,255,0.12); color: var(--text); }
+  .dpi-val {
+    font-size: 11px; color: var(--blue); font-family: 'Space Mono', monospace;
+    width: 32px; text-align: center;
+  }
+
+  /* Notification */
+  .nova-notif {
+    display: flex; align-items: flex-start; gap: 10px;
+    background: rgba(79,142,247,0.08);
+    border: 1px solid rgba(79,142,247,0.2);
+    border-radius: 12px;
+    padding: 10px 12px;
+    animation: slideIn 0.3s ease;
+  }
+  .notif-icon { font-size: 16px; line-height: 1; margin-top: 1px; }
+  .notif-title { font-size: 12px; font-weight: 600; color: var(--text); margin-bottom: 1px; }
+  .notif-msg { font-size: 11px; color: var(--text-dim); line-height: 1.4; }
+  @keyframes slideIn { from { opacity:0; transform:translateY(-8px); } to { opacity:1; transform:none; } }
+
+  /* Colorpicker row */
+  .color-row { display: flex; gap: 6px; }
+  .color-swatch {
+    width: 24px; height: 24px; border-radius: 50%;
+    cursor: pointer; transition: transform 0.15s;
+    border: 2px solid transparent;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+  }
+  .color-swatch:hover, .color-swatch.active { transform: scale(1.2); border-color: rgba(255,255,255,0.5); }
+
+  /* Progress bar */
+  .prog-bar {
+    height: 5px; border-radius: 100px;
+    background: rgba(255,255,255,0.07);
+    overflow: hidden; position: relative;
+    box-shadow: var(--neu-shadow-in);
+  }
+  .prog-fill {
+    height: 100%; border-radius: 100px;
+    background: linear-gradient(90deg, var(--blue), var(--cyan));
+    box-shadow: 0 0 8px var(--blue-glow);
+    transition: width 0.6s cubic-bezier(0.34,1.2,0.64,1);
+  }
+
+  /* ── Docs / API section ── */
+  .section-title {
+    font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--text-dim); margin: 32px 0 16px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .section-title::after {
+    content: ''; flex: 1; height: 1px;
+    background: linear-gradient(90deg, rgba(255,255,255,0.1), transparent);
+  }
+
+  .api-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+
+  .api-card {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 14px;
+    padding: 16px;
+    transition: all 0.2s;
+  }
+  .api-card:hover {
+    background: rgba(255,255,255,0.05);
+    border-color: rgba(79,142,247,0.2);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+  }
+  .api-method {
+    display: inline-block;
+    font-family: 'Space Mono', monospace;
+    font-size: 11px; font-weight: 700;
+    padding: 2px 7px; border-radius: 5px;
+    margin-bottom: 8px;
+    background: rgba(79,142,247,0.15); color: var(--blue);
+  }
+  .api-method.create { background: rgba(52,211,153,0.15); color: var(--green); }
+  .api-method.event { background: rgba(251,191,36,0.15); color: var(--amber); }
+  .api-method.set { background: rgba(139,92,246,0.15); color: var(--purple); }
+  .api-name {
+    font-family: 'Space Mono', monospace;
+    font-size: 12px; color: var(--text);
+    margin-bottom: 4px; font-weight: 700;
+  }
+  .api-sig {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px; color: var(--text-dim);
+    margin-bottom: 6px;
+    line-height: 1.5;
+  }
+  .api-desc { font-size: 11px; color: var(--text-dim); line-height: 1.5; }
+
+  /* Code block */
+  .code-block {
+    background: rgba(0,0,0,0.4);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 14px;
+    padding: 18px 20px;
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    line-height: 1.8;
+    overflow-x: auto;
+    position: relative;
+  }
+  .code-block .c-comment { color: rgba(150,170,200,0.5); }
+  .code-block .c-key { color: #c792ea; }
+  .code-block .c-fn { color: #82aaff; }
+  .code-block .c-str { color: #c3e88d; }
+  .code-block .c-num { color: #f78c6c; }
+  .code-block .c-var { color: var(--cyan); }
+
+  .copy-btn {
+    position: absolute; top: 10px; right: 10px;
+    padding: 4px 10px;
+    background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 6px; font-size: 10px; font-family: 'Space Mono', monospace;
+    color: var(--text-dim); cursor: pointer; transition: all 0.15s;
+  }
+  .copy-btn:hover { background: rgba(255,255,255,0.12); color: var(--text); }
+
+  /* Feature pills */
+  .feature-pills { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 28px; }
+  .pill {
+    display: flex; align-items: center; gap: 6px;
+    background: var(--glass-bg); border: 1px solid var(--glass-border);
+    border-radius: 100px; padding: 5px 12px 5px 8px;
+    font-size: 11px; color: var(--text-dim);
+    backdrop-filter: var(--glass-blur);
+  }
+  .pill-icon { font-size: 14px; }
+
+  /* Mobile note */
+  .mobile-bar {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 14px; padding: 12px 16px;
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  }
+  .mobile-bar-icon { font-size: 22px; }
+  .mobile-bar-info { flex: 1; min-width: 180px; }
+  .mobile-bar-title { font-size: 12px; font-weight: 600; color: var(--text); margin-bottom: 2px; }
+  .mobile-bar-desc { font-size: 11px; color: var(--text-dim); }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+
+  @media (max-width: 600px) {
+    .two-col { grid-template-columns: 1fr; }
+    .api-grid { grid-template-columns: 1fr; }
+    .nova-tab { padding: 6px 10px; font-size: 11px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="scene"></div>
+
+<div class="wrapper">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="logo-badge">
+      <div class="logo-dot"></div>
+      Nova UI Library · v2.0
+    </div>
+    <h1>Build Beautiful<br>Roblox Interfaces</h1>
+    <p>Glassmorphism & Neumorphism components with full API, DPI scaling, and mobile‑first design.</p>
+  </div>
+
+  <!-- Feature Pills -->
+  <div class="feature-pills">
+    <div class="pill"><span class="pill-icon">🪟</span> Glassmorphism</div>
+    <div class="pill"><span class="pill-icon">🫧</span> Soft Neumorphism</div>
+    <div class="pill"><span class="pill-icon">📱</span> Mobile Support</div>
+    <div class="pill"><span class="pill-icon">📏</span> DPI Scaling</div>
+    <div class="pill"><span class="pill-icon">👁️</span> Hide Button</div>
+    <div class="pill"><span class="pill-icon">🔌</span> Full API</div>
+    <div class="pill"><span class="pill-icon">🎨</span> Themeable</div>
+    <div class="pill"><span class="pill-icon">⚡</span> Zero lag</div>
+  </div>
+
+  <!-- DEMO WINDOW -->
+  <div class="demo-window">
+    <div class="demo-titlebar">
+      <div class="demo-titlebar-dot dot-red"></div>
+      <div class="demo-titlebar-dot dot-yellow"></div>
+      <div class="demo-titlebar-dot dot-green"></div>
+      <span class="demo-title-text">NovaUI — Interactive Preview</span>
+    </div>
+
+    <div class="nova-panel">
+      <div class="nova-container" id="novaContainer">
+
+        <!-- Hide Button -->
+        <div class="hide-btn" onclick="toggleNova()" title="Hide UI">✕</div>
+        <div class="show-btn" onclick="toggleNova()" id="showBtn">⊞ Show UI</div>
+
+        <!-- Tabs -->
+        <div class="nova-tabs">
+          <button class="nova-tab active" onclick="switchTab(0, this)">Main</button>
+          <button class="nova-tab" onclick="switchTab(1, this)">Visuals</button>
+          <button class="nova-tab" onclick="switchTab(2, this)">System</button>
+        </div>
+
+        <div class="nova-content" id="novaContent">
+
+          <!-- TAB 0: Main -->
+          <div class="tab-panel active" id="tab0">
+
+            <!-- ESP Module -->
+            <div class="nova-module">
+              <div class="module-header">
+                <div class="module-info">
+                  <div class="module-title">Player ESP</div>
+                  <div class="module-desc">Highlight players through walls</div>
+                </div>
+                <label class="toggle">
+                  <input type="checkbox" checked onchange="onToggle('esp', this)">
+                  <div class="toggle-track"></div>
+                  <div class="toggle-thumb"></div>
+                </label>
+              </div>
+              <div class="nova-slider-wrap">
+                <div class="slider-header">
+                  <span class="slider-name">Range</span>
+                  <span class="slider-val" id="esp-range-val">500 studs</span>
+                </div>
+                <input class="nova-slider" type="range" min="50" max="1000" value="500" id="esp-range"
+                  oninput="updateSlider('esp-range', v => v+' studs')">
+              </div>
+              <div style="margin-top:10px">
+                <div class="btn-group-label">Color</div>
+                <div class="color-row">
+                  <div class="color-swatch active" style="background:#4F8EF7" onclick="selectColor(this,'#4F8EF7')"></div>
+                  <div class="color-swatch" style="background:#34D399" onclick="selectColor(this,'#34D399')"></div>
+                  <div class="color-swatch" style="background:#F87171" onclick="selectColor(this,'#F87171')"></div>
+                  <div class="color-swatch" style="background:#FBBF24" onclick="selectColor(this,'#FBBF24')"></div>
+                  <div class="color-swatch" style="background:#c4b5fd" onclick="selectColor(this,'#c4b5fd')"></div>
+                  <div class="color-swatch" style="background:#fff" onclick="selectColor(this,'#fff')"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Two-col modules -->
+            <div class="two-col">
+
+              <div class="nova-module">
+                <div class="module-header">
+                  <div class="module-info">
+                    <div class="module-title">Aimbot</div>
+                    <div class="module-desc">Auto‑aim assist</div>
+                  </div>
+                  <label class="toggle">
+                    <input type="checkbox" onchange="onToggle('aimbot', this)">
+                    <div class="toggle-track"></div>
+                    <div class="toggle-thumb"></div>
+                  </label>
+                </div>
+                <div class="nova-slider-wrap">
+                  <div class="slider-header">
+                    <span class="slider-name">Smoothing</span>
+                    <span class="slider-val" id="aim-smooth-val">60%</span>
+                  </div>
+                  <input class="nova-slider" type="range" min="0" max="100" value="60" id="aim-smooth"
+                    oninput="updateSlider('aim-smooth', v => v+'%')">
+                </div>
+              </div>
+
+              <div class="nova-module">
+                <div class="module-header">
+                  <div class="module-info">
+                    <div class="module-title">Speed</div>
+                    <div class="module-desc">Walk speed mult.</div>
+                  </div>
+                  <label class="toggle">
+                    <input type="checkbox" onchange="onToggle('speed', this)">
+                    <div class="toggle-track"></div>
+                    <div class="toggle-thumb"></div>
+                  </label>
+                </div>
+                <div class="nova-slider-wrap">
+                  <div class="slider-header">
+                    <span class="slider-name">Multiplier</span>
+                    <span class="slider-val" id="speed-val">1.0×</span>
+                  </div>
+                  <input class="nova-slider" type="range" min="10" max="50" value="10" id="speed"
+                    oninput="updateSlider('speed', v => (v/10).toFixed(1)+'×')">
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Action buttons -->
+            <div class="nova-module">
+              <div class="btn-group-label">Quick Actions</div>
+              <div style="display:flex; flex-direction:column; gap:8px">
+                <div class="btn-row">
+                  <div class="icon-btn" onclick="toggleBtn(this,'active')" title="ESP">👁</div>
+                  <div class="icon-btn active" onclick="toggleBtn(this,'active')" title="Radar">📡</div>
+                  <div class="icon-btn" onclick="toggleBtn(this,'active')" title="Chams">🎯</div>
+                  <div class="icon-btn" onclick="toggleBtn(this,'active')" title="No Recoil">🔫</div>
+                </div>
+                <div class="btn-row">
+                  <div class="icon-btn active-green" onclick="toggleBtn(this,'active-green')" title="Fly">🚀</div>
+                  <div class="icon-btn" onclick="toggleBtn(this,'active-green')" title="Noclip">👻</div>
+                  <div class="icon-btn" onclick="toggleBtn(this,'active-green')" title="Inf Jump">🦘</div>
+                  <div class="icon-btn" onclick="toggleBtn(this,'active-green')" title="God Mode">🛡️</div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- TAB 1: Visuals -->
+          <div class="tab-panel" id="tab1">
+
+            <div class="nova-module">
+              <div class="module-title" style="margin-bottom:10px">FOV Circle</div>
+              <div class="toggle-wrap" style="margin-bottom:10px">
+                <label class="toggle">
+                  <input type="checkbox" checked>
+                  <div class="toggle-track"></div>
+                  <div class="toggle-thumb"></div>
+                </label>
+                <span class="toggle-label">Show FOV</span>
+              </div>
+              <div class="nova-slider-wrap">
+                <div class="slider-header">
+                  <span class="slider-name">FOV Size</span>
+                  <span class="slider-val" id="fov-val">120°</span>
+                </div>
+                <input class="nova-slider" type="range" min="30" max="360" value="120" id="fov"
+                  oninput="updateSlider('fov', v => v+'°')">
+              </div>
+            </div>
+
+            <div class="nova-module">
+              <div class="module-title" style="margin-bottom:10px">Render</div>
+              <div style="display:flex; flex-direction:column; gap:8px">
+                <div class="toggle-wrap">
+                  <label class="toggle"><input type="checkbox" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+                  <span class="toggle-label">Fullbright</span>
+                </div>
+                <div class="toggle-wrap">
+                  <label class="toggle"><input type="checkbox"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+                  <span class="toggle-label">Remove Fog</span>
+                </div>
+                <div class="toggle-wrap">
+                  <label class="toggle"><input type="checkbox" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+                  <span class="toggle-label">Smooth Terrain</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="nova-module">
+              <div class="module-title" style="margin-bottom:8px">Crosshair Style</div>
+              <div class="btn-row">
+                <div class="icon-btn active" onclick="toggleBtn(this,'active')" title="Cross">✛</div>
+                <div class="icon-btn" onclick="toggleBtn(this,'active')" title="Dot">•</div>
+                <div class="icon-btn" onclick="toggleBtn(this,'active')" title="Circle">○</div>
+                <div class="icon-btn" onclick="toggleBtn(this,'active')" title="None">✕</div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- TAB 2: System -->
+          <div class="tab-panel" id="tab2">
+
+            <!-- DPI -->
+            <div class="nova-module">
+              <div class="module-title" style="margin-bottom:8px">📱 Mobile DPI Scale</div>
+              <div class="dpi-control">
+                <span class="dpi-label">UI Scale</span>
+                <div class="dpi-btns">
+                  <div class="dpi-btn" onclick="changeDPI(-0.1)">−</div>
+                  <span class="dpi-val" id="dpiVal">1.0×</span>
+                  <div class="dpi-btn" onclick="changeDPI(0.1)">+</div>
+                </div>
+              </div>
+              <div style="margin-top:8px">
+                <div class="slider-header">
+                  <span class="slider-name">Fine adjustment</span>
+                  <span class="slider-val" id="dpi-fine-val">1.0×</span>
+                </div>
+                <input class="nova-slider" type="range" min="5" max="30" value="10" id="dpi-fine"
+                  oninput="updateSlider('dpi-fine', v => (v/10).toFixed(1)+'×', true)">
+              </div>
+            </div>
+
+            <!-- Status -->
+            <div class="nova-module">
+              <div class="module-title" style="margin-bottom:10px">Status</div>
+              <div style="display:flex; flex-direction:column; gap:8px">
+                <div style="display:flex;justify-content:space-between;align-items:center">
+                  <span style="font-size:11px;color:var(--text-dim)">Memory</span>
+                  <div style="display:flex;align-items:center;gap:8px;flex:1;max-width:160px;margin-left:12px">
+                    <div class="prog-bar" style="flex:1"><div class="prog-fill" style="width:42%"></div></div>
+                    <span style="font-size:10px;font-family:'Space Mono',monospace;color:var(--text-dim)">42%</span>
+                  </div>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center">
+                  <span style="font-size:11px;color:var(--text-dim)">FPS Impact</span>
+                  <div style="display:flex;align-items:center;gap:8px;flex:1;max-width:160px;margin-left:12px">
+                    <div class="prog-bar" style="flex:1"><div class="prog-fill" style="width:18%;background:linear-gradient(90deg,var(--green),var(--cyan))"></div></div>
+                    <span style="font-size:10px;font-family:'Space Mono',monospace;color:var(--green)">Low</span>
+                  </div>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center">
+                  <span style="font-size:11px;color:var(--text-dim)">Modules</span>
+                  <span class="badge badge-blue"><span class="badge-dot"></span>3 Active</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Notification -->
+            <div class="nova-notif" id="notifBox">
+              <div class="notif-icon">💡</div>
+              <div>
+                <div class="notif-title">Mobile Optimized</div>
+                <div class="notif-msg">Drag the panel to reposition. Use DPI controls above to scale for your screen.</div>
+              </div>
+            </div>
+
+          </div>
+
+        </div><!-- end nova-content -->
+      </div><!-- end nova-container -->
+    </div><!-- end nova-panel -->
+  </div><!-- end demo-window -->
+
+  <!-- Mobile Support Section -->
+  <div class="section-title">Mobile & DPI</div>
+  <div class="mobile-bar" style="margin-bottom:28px">
+    <div class="mobile-bar-icon">📱</div>
+    <div class="mobile-bar-info">
+      <div class="mobile-bar-title">Touch-first design</div>
+      <div class="mobile-bar-desc">Larger touch targets, swipe gestures, and adjustable DPI scale (0.5× – 3.0×). The hide button collapses the UI to a small tab on mobile so players never lose access to the game scene.</div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <span class="badge badge-green"><span class="badge-dot"></span>iOS</span>
+      <span class="badge badge-green"><span class="badge-dot"></span>Android</span>
+      <span class="badge badge-blue"><span class="badge-dot"></span>Xbox</span>
+    </div>
+  </div>
+
+  <!-- API Reference -->
+  <div class="section-title">API Reference</div>
+  <div class="api-grid">
+
+    <div class="api-card">
+      <div class="api-method create">CREATE</div>
+      <div class="api-name">Nova.new()</div>
+      <div class="api-sig">Nova.new(title, options?) → Window</div>
+      <div class="api-desc">Creates a new UI window. Options: theme, position, size, draggable, dpi.</div>
+    </div>
+
+    <div class="api-card">
+      <div class="api-method create">CREATE</div>
+      <div class="api-name">:AddTab()</div>
+      <div class="api-sig">Window:AddTab(name) → Tab</div>
+      <div class="api-desc">Adds a navigation tab to the window. Returns a Tab object for adding sections.</div>
+    </div>
+
+    <div class="api-card">
+      <div class="api-method create">CREATE</div>
+      <div class="api-name">:AddModule()</div>
+      <div class="api-sig">Tab:AddModule(title, desc?) → Module</div>
+      <div class="api-desc">Creates a glassmorphic module card with optional description and power toggle.</div>
+    </div>
+
+    <div class="api-card">
+      <div class="api-method">ADD</div>
+      <div class="api-name">:AddToggle()</div>
+      <div class="api-sig">Module:AddToggle(name, default?) → Toggle</div>
+      <div class="api-desc">iOS-style pill switch. Returns a Toggle with .Value and :OnChanged(cb) event.</div>
+    </div>
+
+    <div class="api-card">
+      <div class="api-method">ADD</div>
+      <div class="api-name">:AddSlider()</div>
+      <div class="api-sig">Module:AddSlider(name, min, max, default?) → Slider</div>
+      <div class="api-desc">Glowing rounded slider. Supports suffix, decimals, and live value display.</div>
+    </div>
+
+    <div class="api-card">
+      <div class="api-method">ADD</div>
+      <div class="api-name">:AddButton()</div>
+      <div class="api-sig">Module:AddButton(icon, label?) → Button</div>
+      <div class="api-desc">Circular icon button. Supports active states: default, blue, green, red, amber.</div>
+    </div>
+
+    <div class="api-card">
+      <div class="api-method">ADD</div>
+      <div class="api-name">:AddColorPicker()</div>
+      <div class="api-sig">Module:AddColorPicker(name, default?) → ColorPicker</div>
+      <div class="api-desc">Color swatch row. Returns selected Color3. Supports custom palette arrays.</div>
+    </div>
+
+    <div class="api-card">
+      <div class="api-method event">EVENT</div>
+      <div class="api-name">:OnChanged()</div>
+      <div class="api-sig">Component:OnChanged(callback) → void</div>
+      <div class="api-desc">Fires whenever the component value changes. Passes new value as first argument.</div>
+    </div>
+
+    <div class="api-card">
+      <div class="api-method set">SET</div>
+      <div class="api-name">:SetValue()</div>
+      <div class="api-sig">Component:SetValue(value) → void</div>
+      <div class="api-desc">Programmatically update any component. Triggers OnChanged if value differs.</div>
+    </div>
+
+    <div class="api-card">
+      <div class="api-method set">SET</div>
+      <div class="api-name">:SetDPI()</div>
+      <div class="api-sig">Window:SetDPI(scale) → void</div>
+      <div class="api-desc">Sets UI scale (0.5–3.0). Use with UserInputService to auto-detect mobile DPI.</div>
+    </div>
+
+    <div class="api-card">
+      <div class="api-method set">SET</div>
+      <div class="api-name">:Hide() / :Show()</div>
+      <div class="api-sig">Window:Hide() / Window:Show() → void</div>
+      <div class="api-desc">Collapses to a minimized tab on screen edge. Tapping restores. Keyboard bindable.</div>
+    </div>
+
+    <div class="api-card">
+      <div class="api-method">ADD</div>
+      <div class="api-name">:Notify()</div>
+      <div class="api-sig">Nova:Notify(title, msg, type?) → void</div>
+      <div class="api-desc">Toast notification. Types: info, success, warn, error. Auto-dismisses after 4s.</div>
+    </div>
+
+  </div>
+
+  <!-- Code Example -->
+  <div class="section-title">Example Code</div>
+  <div class="code-block">
+    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+<span class="c-comment">-- // NovaUI v2 — Full Example</span>
+<span class="c-key">local</span> <span class="c-var">Nova</span> = loadstring(game:HttpGet(<span class="c-str">"rbxassetid://NOVA_ID"</span>))()
+
+<span class="c-comment">-- Create window with DPI auto-detection</span>
+<span class="c-key">local</span> <span class="c-var">win</span> = <span class="c-var">Nova</span>.<span class="c-fn">new</span>(<span class="c-str">"My Script"</span>, {
+  theme    = <span class="c-str">"glass"</span>,
+  position = UDim2.<span class="c-fn">fromScale</span>(<span class="c-num">0.5</span>, <span class="c-num">0.5</span>),
+  dpi      = <span class="c-var">Nova</span>.<span class="c-fn">AutoDPI</span>(),   <span class="c-comment">-- mobile auto-scale</span>
+  draggable = <span class="c-key">true</span>,
+  hideKey  = Enum.KeyCode.RightControl,
+})
+
+<span class="c-comment">-- Add tab & module</span>
+<span class="c-key">local</span> <span class="c-var">tab</span>    = <span class="c-var">win</span>:<span class="c-fn">AddTab</span>(<span class="c-str">"Main"</span>)
+<span class="c-key">local</span> <span class="c-var">espMod</span> = <span class="c-var">tab</span>:<span class="c-fn">AddModule</span>(<span class="c-str">"Player ESP"</span>, <span class="c-str">"Highlight players"</span>)
+
+<span class="c-comment">-- Toggle</span>
+<span class="c-key">local</span> <span class="c-var">espToggle</span> = <span class="c-var">espMod</span>:<span class="c-fn">AddToggle</span>(<span class="c-str">"Enable ESP"</span>, <span class="c-key">false</span>)
+<span class="c-var">espToggle</span>:<span class="c-fn">OnChanged</span>(<span class="c-key">function</span>(v)
+  ESP.<span class="c-fn">SetEnabled</span>(v)
+<span class="c-key">end</span>)
+
+<span class="c-comment">-- Slider with live callback</span>
+<span class="c-key">local</span> <span class="c-var">range</span> = <span class="c-var">espMod</span>:<span class="c-fn">AddSlider</span>(<span class="c-str">"Range"</span>, <span class="c-num">50</span>, <span class="c-num">1000</span>, <span class="c-num">500</span>)
+<span class="c-var">range</span>:<span class="c-fn">OnChanged</span>(<span class="c-key">function</span>(v) ESP.Range = v <span class="c-key">end</span>)
+
+<span class="c-comment">-- Color picker</span>
+<span class="c-key">local</span> <span class="c-var">col</span> = <span class="c-var">espMod</span>:<span class="c-fn">AddColorPicker</span>(<span class="c-str">"Color"</span>, Color3.<span class="c-fn">fromRGB</span>(<span class="c-num">79</span>,<span class="c-num">142</span>,<span class="c-num">247</span>))
+<span class="c-var">col</span>:<span class="c-fn">OnChanged</span>(<span class="c-key">function</span>(c) ESP.Color = c <span class="c-key">end</span>)
+
+<span class="c-comment">-- Notification</span>
+<span class="c-var">Nova</span>:<span class="c-fn">Notify</span>(<span class="c-str">"Loaded!"</span>, <span class="c-str">"NovaUI ready."</span>, <span class="c-str">"success"</span>)
+  </div>
+
+</div>
+
+<script>
+// Tab switching
+function switchTab(idx, btn) {
+  document.querySelectorAll('.nova-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab'+idx).classList.add('active');
+}
+
+// Slider update
+function updateSlider(id, fmt, isDPI) {
+  const el = document.getElementById(id);
+  const valEl = document.getElementById(id+'-val');
+  const v = el.value;
+  if (valEl) valEl.textContent = fmt(v);
+
+  // update fill gradient
+  const pct = (v - el.min) / (el.max - el.min) * 100;
+  el.style.background = `linear-gradient(90deg, #4F8EF7 0%, #38D9F5 ${pct}%, rgba(255,255,255,0.08) ${pct}%)`;
+
+  if (isDPI) {
+    document.getElementById('dpiVal').textContent = fmt(v);
+  }
+}
+
+// Init all sliders on load
+document.querySelectorAll('.nova-slider').forEach(s => {
+  const pct = (s.value - s.min) / (s.max - s.min) * 100;
+  s.style.background = `linear-gradient(90deg, #4F8EF7 0%, #38D9F5 ${pct}%, rgba(255,255,255,0.08) ${pct}%)`;
+});
+
+// Toggle callbacks
+function onToggle(name, el) {
+  console.log(`[NovaUI] ${name} = ${el.checked}`);
+}
+
+// Icon button toggle
+function toggleBtn(el, cls) {
+  const wasActive = el.classList.contains(cls);
+  el.parentElement.querySelectorAll('.icon-btn').forEach(b => b.classList.remove(cls));
+  if (!wasActive) el.classList.add(cls);
+}
+
+// Color swatch
+function selectColor(el, hex) {
+  el.closest('.color-row').querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// DPI controls
+let dpiVal = 1.0;
+function changeDPI(delta) {
+  dpiVal = Math.min(3, Math.max(0.5, +(dpiVal + delta).toFixed(1)));
+  document.getElementById('dpiVal').textContent = dpiVal.toFixed(1) + '×';
+  document.getElementById('dpi-fine-val').textContent = dpiVal.toFixed(1) + '×';
+  // sync slider
+  const slider = document.getElementById('dpi-fine');
+  slider.value = dpiVal * 10;
+  const pct = (slider.value - slider.min) / (slider.max - slider.min) * 100;
+  slider.style.background = `linear-gradient(90deg, #4F8EF7 0%, #38D9F5 ${pct}%, rgba(255,255,255,0.08) ${pct}%)`;
+}
+
+// Hide/Show
+function toggleNova() {
+  document.getElementById('novaContainer').classList.toggle('nova-hidden');
+}
+
+// Copy code
+function copyCode(btn) {
+  const code = btn.parentElement.innerText.replace('Copy\n','');
+  navigator.clipboard.writeText(code).then(() => {
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = 'Copy', 1500);
+  });
+}
+</script>
+
+</body>
+</html>
