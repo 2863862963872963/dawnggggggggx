@@ -38,7 +38,7 @@ Nexus.Theme = {
 Nexus.DPI = {
     Scale = 1.0,
     AutoScale = true,
-    MobileScale = 0.75,
+    MobileScale = 0.6,
     TabletScale = 0.85,
     DesktopScale = 1.0
 }
