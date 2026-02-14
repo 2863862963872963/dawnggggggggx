@@ -11,6 +11,10 @@ Nexus.__index = Nexus
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
+local GuiService = game:GetService("GuiService")
+
+-- Detect if on mobile
+local isMobile = UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
 
 -- Theme Configuration
 Nexus.Theme = {
@@ -28,6 +32,15 @@ Nexus.Theme = {
     BackgroundTransparency = 0.25,
     SidebarTransparency = 0.15,
     CardTransparency = 0.35
+}
+
+-- DPI Scaling Configuration
+Nexus.DPI = {
+    Scale = 1.0,
+    AutoScale = true,
+    MobileScale = 0.75,
+    TabletScale = 0.85,
+    DesktopScale = 1.0
 }
 
 -- Utility Functions
@@ -69,16 +82,73 @@ local function Tween(object, properties, duration, easingStyle, easingDirection)
     return tween
 end
 
+-- DPI Scaling Functions
+local function GetDeviceType()
+    local screenSize = workspace.CurrentCamera.ViewportSize
+    local diagonal = math.sqrt(screenSize.X^2 + screenSize.Y^2)
+    
+    if isMobile then
+        if diagonal < 1000 then
+            return "Mobile"
+        else
+            return "Tablet"
+        end
+    else
+        return "Desktop"
+    end
+end
+
+local function GetDPIScale()
+    if not Nexus.DPI.AutoScale then
+        return Nexus.DPI.Scale
+    end
+    
+    local deviceType = GetDeviceType()
+    if deviceType == "Mobile" then
+        return Nexus.DPI.MobileScale
+    elseif deviceType == "Tablet" then
+        return Nexus.DPI.TabletScale
+    else
+        return Nexus.DPI.DesktopScale
+    end
+end
+
+local function ScaleSize(udim2)
+    local scale = GetDPIScale()
+    return UDim2.new(
+        udim2.X.Scale,
+        udim2.X.Offset * scale,
+        udim2.Y.Scale,
+        udim2.Y.Offset * scale
+    )
+end
+
+local function ScaleNumber(number)
+    return number * GetDPIScale()
+end
+
 -- Create Main Window
 function Nexus:CreateWindow(config)
     config = config or {}
     local window = {
         Title = config.Title or "NEXUS",
         Subtitle = config.Subtitle or "ADVANCED UI",
+        DPIScale = config.DPIScale or nil, -- Custom DPI override
+        SidebarCollapsed = false,
         CurrentTab = nil,
         Tabs = {},
         Callbacks = {}
     }
+    
+    -- Set custom DPI if provided
+    if window.DPIScale then
+        Nexus.DPI.Scale = window.DPIScale
+        Nexus.DPI.AutoScale = false
+    end
+    
+    local dpiScale = GetDPIScale()
+    local baseWidth = isMobile and 800 or 1200
+    local baseHeight = isMobile and 600 or 750
     
     -- Create ScreenGui
     local screenGui = Instance.new("ScreenGui")
@@ -90,7 +160,7 @@ function Nexus:CreateWindow(config)
     -- Main Frame (Window Container)
     local mainFrame = Instance.new("Frame")
     mainFrame.Name = "MainWindow"
-    mainFrame.Size = UDim2.new(0, 1200, 0, 750)
+    mainFrame.Size = ScaleSize(UDim2.new(0, baseWidth, 0, baseHeight))
     mainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
     mainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
     mainFrame.BackgroundColor3 = Nexus.Theme.GlassMain
@@ -99,7 +169,7 @@ function Nexus:CreateWindow(config)
     mainFrame.ClipsDescendants = true
     mainFrame.Parent = screenGui
     
-    CreateCorner(mainFrame, 20)
+    CreateCorner(mainFrame, ScaleNumber(20))
     CreateStroke(mainFrame, Color3.fromRGB(255, 255, 255), 1, 0.92)
     
     -- Glow Effect
@@ -117,7 +187,7 @@ function Nexus:CreateWindow(config)
     -- Sidebar
     local sidebar = Instance.new("Frame")
     sidebar.Name = "Sidebar"
-    sidebar.Size = UDim2.new(0, 280, 1, 0)
+    sidebar.Size = ScaleSize(UDim2.new(0, 280, 1, 0))
     sidebar.BackgroundColor3 = Nexus.Theme.GlassSidebar
     sidebar.BackgroundTransparency = Nexus.Theme.SidebarTransparency
     sidebar.BorderSizePixel = 0
@@ -125,30 +195,56 @@ function Nexus:CreateWindow(config)
     
     CreateStroke(sidebar, Color3.fromRGB(255, 255, 255), 1, 0.92)
     
+    -- Collapse Button
+    local collapseButton = Instance.new("TextButton")
+    collapseButton.Name = "CollapseButton"
+    collapseButton.Size = ScaleSize(UDim2.new(0, 40, 0, 40))
+    collapseButton.Position = UDim2.new(1, ScaleNumber(-45), 0, ScaleNumber(15))
+    collapseButton.BackgroundColor3 = Nexus.Theme.GlassCard
+    collapseButton.BackgroundTransparency = 0.3
+    collapseButton.BorderSizePixel = 0
+    collapseButton.AutoButtonColor = false
+    collapseButton.Text = ""
+    collapseButton.ZIndex = 10
+    collapseButton.Parent = sidebar
+    
+    CreateCorner(collapseButton, ScaleNumber(10))
+    CreateStroke(collapseButton, Color3.fromRGB(255, 255, 255), 1, 0.92)
+    
+    local collapseIcon = Instance.new("TextLabel")
+    collapseIcon.Name = "Icon"
+    collapseIcon.Size = UDim2.new(1, 0, 1, 0)
+    collapseIcon.BackgroundTransparency = 1
+    collapseIcon.Text = "◀"
+    collapseIcon.TextColor3 = Nexus.Theme.TextMain
+    collapseIcon.Font = Enum.Font.GothamBold
+    collapseIcon.TextSize = ScaleNumber(16)
+    collapseIcon.Parent = collapseButton
+    
     -- Sidebar Header
     local sidebarHeader = Instance.new("Frame")
     sidebarHeader.Name = "Header"
-    sidebarHeader.Size = UDim2.new(1, 0, 0, 100)
+    sidebarHeader.Size = ScaleSize(UDim2.new(1, 0, 0, 100))
     sidebarHeader.BackgroundTransparency = 1
     sidebarHeader.Parent = sidebar
     
     -- Logo Container
     local logoContainer = Instance.new("Frame")
     logoContainer.Name = "Logo"
-    logoContainer.Size = UDim2.new(1, -40, 0, 60)
-    logoContainer.Position = UDim2.new(0, 20, 0, 10)
+    logoContainer.Size = ScaleSize(UDim2.new(1, -40, 0, 60))
+    logoContainer.Position = UDim2.new(0, ScaleNumber(20), 0, ScaleNumber(10))
     logoContainer.BackgroundTransparency = 1
     logoContainer.Parent = sidebarHeader
     
     -- Logo Icon
     local logoIcon = Instance.new("Frame")
     logoIcon.Name = "Icon"
-    logoIcon.Size = UDim2.new(0, 42, 0, 42)
+    logoIcon.Size = ScaleSize(UDim2.new(0, 42, 0, 42))
     logoIcon.BackgroundColor3 = Nexus.Theme.AccentPrimary
     logoIcon.BorderSizePixel = 0
     logoIcon.Parent = logoContainer
     
-    CreateCorner(logoIcon, 12)
+    CreateCorner(logoIcon, ScaleNumber(12))
     CreateGradient(logoIcon, Nexus.Theme.AccentPrimary, Nexus.Theme.AccentSecondary, 135)
     
     local logoIconText = Instance.new("TextLabel")
@@ -157,116 +253,116 @@ function Nexus:CreateWindow(config)
     logoIconText.Text = "N"
     logoIconText.TextColor3 = Color3.fromRGB(255, 255, 255)
     logoIconText.Font = Enum.Font.GothamBold
-    logoIconText.TextSize = 24
+    logoIconText.TextSize = ScaleNumber(24)
     logoIconText.Parent = logoIcon
     
     -- Logo Text
     local logoTitle = Instance.new("TextLabel")
     logoTitle.Name = "Title"
-    logoTitle.Size = UDim2.new(1, -54, 0, 25)
-    logoTitle.Position = UDim2.new(0, 54, 0, 0)
+    logoTitle.Size = ScaleSize(UDim2.new(1, -54, 0, 25))
+    logoTitle.Position = UDim2.new(0, ScaleNumber(54), 0, 0)
     logoTitle.BackgroundTransparency = 1
     logoTitle.Text = window.Title
     logoTitle.TextColor3 = Nexus.Theme.AccentPrimary
     logoTitle.Font = Enum.Font.GothamBold
-    logoTitle.TextSize = 22
+    logoTitle.TextSize = ScaleNumber(22)
     logoTitle.TextXAlignment = Enum.TextXAlignment.Left
     logoTitle.Parent = logoContainer
     
     local logoSubtitle = Instance.new("TextLabel")
     logoSubtitle.Name = "Subtitle"
-    logoSubtitle.Size = UDim2.new(1, -54, 0, 15)
-    logoSubtitle.Position = UDim2.new(0, 54, 0, 27)
+    logoSubtitle.Size = ScaleSize(UDim2.new(1, -54, 0, 15))
+    logoSubtitle.Position = UDim2.new(0, ScaleNumber(54), 0, ScaleNumber(27))
     logoSubtitle.BackgroundTransparency = 1
     logoSubtitle.Text = window.Subtitle
     logoSubtitle.TextColor3 = Nexus.Theme.TextMuted
     logoSubtitle.Font = Enum.Font.GothamBold
-    logoSubtitle.TextSize = 10
+    logoSubtitle.TextSize = ScaleNumber(10)
     logoSubtitle.TextXAlignment = Enum.TextXAlignment.Left
     logoSubtitle.Parent = logoContainer
     
     -- Status Bar
     local statusBar = Instance.new("Frame")
     statusBar.Name = "StatusBar"
-    statusBar.Size = UDim2.new(1, -40, 0, 30)
-    statusBar.Position = UDim2.new(0, 20, 0, 65)
+    statusBar.Size = ScaleSize(UDim2.new(1, -40, 0, 30))
+    statusBar.Position = UDim2.new(0, ScaleNumber(20), 0, ScaleNumber(65))
     statusBar.BackgroundColor3 = Color3.fromRGB(0, 255, 136)
     statusBar.BackgroundTransparency = 0.9
     statusBar.BorderSizePixel = 0
     statusBar.Parent = sidebarHeader
     
-    CreateCorner(statusBar, 8)
+    CreateCorner(statusBar, ScaleNumber(8))
     CreateStroke(statusBar, Color3.fromRGB(0, 255, 136), 1, 0.7)
     
     local statusDot = Instance.new("Frame")
     statusDot.Name = "Dot"
-    statusDot.Size = UDim2.new(0, 8, 0, 8)
-    statusDot.Position = UDim2.new(0, 12, 0.5, -4)
+    statusDot.Size = ScaleSize(UDim2.new(0, 8, 0, 8))
+    statusDot.Position = UDim2.new(0, ScaleNumber(12), 0.5, ScaleNumber(-4))
     statusDot.BackgroundColor3 = Nexus.Theme.StatusOnline
     statusDot.BorderSizePixel = 0
     statusDot.Parent = statusBar
     
-    CreateCorner(statusDot, 4)
+    CreateCorner(statusDot, ScaleNumber(4))
     
     local statusText = Instance.new("TextLabel")
-    statusText.Size = UDim2.new(1, -32, 1, 0)
-    statusText.Position = UDim2.new(0, 28, 0, 0)
+    statusText.Size = ScaleSize(UDim2.new(1, -32, 1, 0))
+    statusText.Position = UDim2.new(0, ScaleNumber(28), 0, 0)
     statusText.BackgroundTransparency = 1
     statusText.Text = "SYSTEM ACTIVE"
     statusText.TextColor3 = Nexus.Theme.StatusOnline
     statusText.Font = Enum.Font.GothamBold
-    statusText.TextSize = 11
+    statusText.TextSize = ScaleNumber(11)
     statusText.TextXAlignment = Enum.TextXAlignment.Left
     statusText.Parent = statusBar
     
     -- Navigation Container
     local navContainer = Instance.new("ScrollingFrame")
     navContainer.Name = "Navigation"
-    navContainer.Size = UDim2.new(1, 0, 1, -110)
-    navContainer.Position = UDim2.new(0, 0, 0, 110)
+    navContainer.Size = ScaleSize(UDim2.new(1, 0, 1, -110))
+    navContainer.Position = UDim2.new(0, 0, 0, ScaleNumber(110))
     navContainer.BackgroundTransparency = 1
     navContainer.BorderSizePixel = 0
-    navContainer.ScrollBarThickness = 4
+    navContainer.ScrollBarThickness = ScaleNumber(4)
     navContainer.ScrollBarImageColor3 = Nexus.Theme.AccentPrimary
     navContainer.CanvasSize = UDim2.new(0, 0, 0, 0)
     navContainer.Parent = sidebar
     
     local navLayout = Instance.new("UIListLayout")
     navLayout.SortOrder = Enum.SortOrder.LayoutOrder
-    navLayout.Padding = UDim.new(0, 4)
+    navLayout.Padding = UDim.new(0, ScaleNumber(4))
     navLayout.Parent = navContainer
     
     local navPadding = Instance.new("UIPadding")
-    navPadding.PaddingLeft = UDim.new(0, 15)
-    navPadding.PaddingRight = UDim.new(0, 15)
-    navPadding.PaddingTop = UDim.new(0, 15)
-    navPadding.PaddingBottom = UDim.new(0, 15)
+    navPadding.PaddingLeft = UDim.new(0, ScaleNumber(15))
+    navPadding.PaddingRight = UDim.new(0, ScaleNumber(15))
+    navPadding.PaddingTop = UDim.new(0, ScaleNumber(15))
+    navPadding.PaddingBottom = UDim.new(0, ScaleNumber(15))
     navPadding.Parent = navContainer
     
     -- Main Content Area
     local contentArea = Instance.new("Frame")
     contentArea.Name = "Content"
-    contentArea.Size = UDim2.new(1, -280, 1, 0)
-    contentArea.Position = UDim2.new(0, 280, 0, 0)
+    contentArea.Size = ScaleSize(UDim2.new(1, -280, 1, 0))
+    contentArea.Position = UDim2.new(0, ScaleNumber(280), 0, 0)
     contentArea.BackgroundTransparency = 1
     contentArea.Parent = mainFrame
     
     -- Content Header
     local contentHeader = Instance.new("Frame")
     contentHeader.Name = "Header"
-    contentHeader.Size = UDim2.new(1, 0, 0, 70)
+    contentHeader.Size = ScaleSize(UDim2.new(1, 0, 0, 70))
     contentHeader.BackgroundTransparency = 1
     contentHeader.Parent = contentArea
     
     local pageTitle = Instance.new("TextLabel")
     pageTitle.Name = "PageTitle"
-    pageTitle.Size = UDim2.new(1, -40, 1, 0)
-    pageTitle.Position = UDim2.new(0, 30, 0, 0)
+    pageTitle.Size = ScaleSize(UDim2.new(1, -40, 1, 0))
+    pageTitle.Position = UDim2.new(0, ScaleNumber(30), 0, 0)
     pageTitle.BackgroundTransparency = 1
     pageTitle.Text = "Dashboard"
     pageTitle.TextColor3 = Nexus.Theme.TextMain
     pageTitle.Font = Enum.Font.GothamBold
-    pageTitle.TextSize = 28
+    pageTitle.TextSize = ScaleNumber(28)
     pageTitle.TextXAlignment = Enum.TextXAlignment.Left
     pageTitle.TextYAlignment = Enum.TextYAlignment.Center
     pageTitle.Parent = contentHeader
@@ -274,18 +370,72 @@ function Nexus:CreateWindow(config)
     -- Tabs Container
     local tabsContainer = Instance.new("Frame")
     tabsContainer.Name = "TabsContainer"
-    tabsContainer.Size = UDim2.new(1, 0, 1, -70)
-    tabsContainer.Position = UDim2.new(0, 0, 0, 70)
+    tabsContainer.Size = ScaleSize(UDim2.new(1, 0, 1, -70))
+    tabsContainer.Position = UDim2.new(0, 0, 0, ScaleNumber(70))
     tabsContainer.BackgroundTransparency = 1
     tabsContainer.Parent = contentArea
     
     window.ScreenGui = screenGui
     window.MainFrame = mainFrame
     window.Sidebar = sidebar
+    window.SidebarHeader = sidebarHeader
     window.NavContainer = navContainer
     window.NavLayout = navLayout
     window.TabsContainer = tabsContainer
     window.PageTitle = pageTitle
+    window.ContentArea = contentArea
+    window.CollapseButton = collapseButton
+    window.CollapseIcon = collapseIcon
+    window.LogoContainer = logoContainer
+    window.StatusBar = statusBar
+    window.BaseWidth = baseWidth
+    
+    -- Collapse/Expand functionality
+    local function ToggleSidebar()
+        window.SidebarCollapsed = not window.SidebarCollapsed
+        
+        if window.SidebarCollapsed then
+            -- Collapse sidebar
+            local collapsedWidth = ScaleNumber(60)
+            Tween(sidebar, {Size = UDim2.new(0, collapsedWidth, 1, 0)}, 0.3, Enum.EasingStyle.Quart)
+            Tween(contentArea, {
+                Size = UDim2.new(1, -collapsedWidth, 1, 0),
+                Position = UDim2.new(0, collapsedWidth, 0, 0)
+            }, 0.3, Enum.EasingStyle.Quart)
+            Tween(collapseIcon, {Rotation = 180}, 0.3)
+            
+            -- Hide sidebar elements
+            task.wait(0.1)
+            logoContainer.Visible = false
+            statusBar.Visible = false
+            navContainer.Visible = false
+        else
+            -- Expand sidebar
+            local expandedWidth = ScaleNumber(280)
+            Tween(sidebar, {Size = UDim2.new(0, expandedWidth, 1, 0)}, 0.3, Enum.EasingStyle.Quart)
+            Tween(contentArea, {
+                Size = UDim2.new(1, -expandedWidth, 1, 0),
+                Position = UDim2.new(0, expandedWidth, 0, 0)
+            }, 0.3, Enum.EasingStyle.Quart)
+            Tween(collapseIcon, {Rotation = 0}, 0.3)
+            
+            -- Show sidebar elements
+            logoContainer.Visible = true
+            statusBar.Visible = true
+            navContainer.Visible = true
+        end
+    end
+    
+    collapseButton.MouseButton1Click:Connect(ToggleSidebar)
+    
+    -- Hover effects for collapse button
+    collapseButton.MouseEnter:Connect(function()
+        Tween(collapseButton, {BackgroundTransparency = 0.1}, 0.2)
+    end)
+    
+    collapseButton.MouseLeave:Connect(function()
+        Tween(collapseButton, {BackgroundTransparency = 0.3}, 0.2)
+    end)
     
     -- Make window draggable
     local dragging = false
@@ -1141,6 +1291,32 @@ function Nexus:AddLabel(section, config)
     end
     
     return label
+end
+
+-- Set DPI Scale
+function Nexus:SetDPIScale(scale, autoScale)
+    if scale then
+        Nexus.DPI.Scale = scale
+        Nexus.DPI.AutoScale = false
+    end
+    
+    if autoScale ~= nil then
+        Nexus.DPI.AutoScale = autoScale
+    end
+    
+    -- If you want to rebuild the UI with new scale, you'd need to recreate the window
+    -- For runtime changes, this would require rebuilding all elements
+    warn("DPI Scale updated. Note: Existing UI elements won't update automatically. Create a new window to apply changes.")
+end
+
+-- Get Current DPI Scale
+function Nexus:GetDPIScale()
+    return GetDPIScale()
+end
+
+-- Get Device Type
+function Nexus:GetDeviceType()
+    return GetDeviceType()
 end
 
 -- Destroy Window
