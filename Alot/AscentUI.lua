@@ -110,6 +110,15 @@ function Utils.GetDPIScale()
 	return scale
 end
 
+function Utils.GetTextScale()
+	local isMobile = Utils.IsMobile() and not Utils.IsTablet()
+	return isMobile and 0.9 or 1
+end
+
+function Utils.ScaleText(baseSize)
+	return math.floor(baseSize * Utils.GetTextScale())
+end
+
 function Utils.ScaleUDim2(udim2, scale)
 	return UDim2.new(
 		udim2.X.Scale,
@@ -591,7 +600,7 @@ function Window:CreateTab(config)
 	
 	-- Create navigation item
 	local navItem = Instance.new("TextButton")
-	navItem.Size = UDim2.new(1, 0, 0, 44)
+	navItem.Size = UDim2.new(1, 0, 0, 50)
 	navItem.BackgroundColor3 = Theme.Colors.GlassCard
 	navItem.BackgroundTransparency = 1
 	navItem.Text = ""
@@ -610,45 +619,58 @@ function Window:CreateTab(config)
 	
 	Utils.CreateCorner(indicator, UDim.new(0, 3))
 	
+	-- Check if mobile
+	local isMobile = Utils.IsMobile() and not Utils.IsTablet()
+	
 	local contentFrame = Instance.new("Frame")
 	contentFrame.Size = UDim2.new(1, 0, 1, 0)
 	contentFrame.BackgroundTransparency = 1
 	contentFrame.Parent = navItem
 	
-	Utils.CreatePadding(contentFrame, {Left = 15, Right = 15})
-	
-	local layout = Instance.new("UIListLayout")
-	layout.FillDirection = Enum.FillDirection.Horizontal
-	layout.VerticalAlignment = Enum.VerticalAlignment.Center
-	layout.Padding = UDim.new(0, 12)
-	layout.Parent = contentFrame
-	
-	Components.CreateIcon(contentFrame, tab.Icon, 20, Theme.Colors.TextMain)
-	
-	local label = Instance.new("TextLabel")
-	label.Size = UDim2.new(0, 0, 1, 0)
-	label.AutomaticSize = Enum.AutomaticSize.X
-	label.BackgroundTransparency = 1
-	label.Text = tab.Name
-	label.Font = Enum.Font.Gotham
-	label.TextSize = 14
-	label.TextColor3 = Theme.Colors.TextMain
-	label.TextXAlignment = Enum.TextXAlignment.Left
-	label.Parent = contentFrame
-	
-	if config.Badge then
-		local badge = Instance.new("TextLabel")
-		badge.Size = UDim2.new(0, 0, 0, 20)
-		badge.AutomaticSize = Enum.AutomaticSize.X
-		badge.BackgroundColor3 = Theme.Colors.Danger
-		badge.Text = config.Badge
-		badge.Font = Enum.Font.GothamBold
-		badge.TextSize = 10
-		badge.TextColor3 = Color3.new(1, 1, 1)
-		badge.Parent = contentFrame
+	if isMobile then
+		-- Mobile: Center icon only
+		local icon = Components.CreateIcon(contentFrame, tab.Icon, 24, Theme.Colors.TextMain)
+		icon.Position = UDim2.new(0.5, -12, 0.5, -12)
+		tab.IconImage = icon
+	else
+		-- Desktop: Icon + Text
+		Utils.CreatePadding(contentFrame, {Left = 15, Right = 15})
 		
-		Utils.CreateCorner(badge, 10)
-		Utils.CreatePadding(badge, {Left = 8, Right = 8})
+		local layout = Instance.new("UIListLayout")
+		layout.FillDirection = Enum.FillDirection.Horizontal
+		layout.VerticalAlignment = Enum.VerticalAlignment.Center
+		layout.Padding = UDim.new(0, 12)
+		layout.Parent = contentFrame
+		
+		local icon = Components.CreateIcon(contentFrame, tab.Icon, 20, Theme.Colors.TextMain)
+		tab.IconImage = icon
+		
+		local label = Instance.new("TextLabel")
+		label.Size = UDim2.new(0, 0, 1, 0)
+		label.AutomaticSize = Enum.AutomaticSize.X
+		label.BackgroundTransparency = 1
+		label.Text = tab.Name
+		label.Font = Enum.Font.Gotham
+		label.TextSize = 14
+		label.TextColor3 = Theme.Colors.TextMain
+		label.TextXAlignment = Enum.TextXAlignment.Left
+		label.Parent = contentFrame
+		tab.LabelText = label
+		
+		if config.Badge then
+			local badge = Instance.new("TextLabel")
+			badge.Size = UDim2.new(0, 0, 0, 20)
+			badge.AutomaticSize = Enum.AutomaticSize.X
+			badge.BackgroundColor3 = Theme.Colors.Danger
+			badge.Text = config.Badge
+			badge.Font = Enum.Font.GothamBold
+			badge.TextSize = 10
+			badge.TextColor3 = Color3.new(1, 1, 1)
+			badge.Parent = contentFrame
+			
+			Utils.CreateCorner(badge, 10)
+			Utils.CreatePadding(badge, {Left = 8, Right = 8})
+		end
 	end
 	
 	-- Create content view
@@ -662,7 +684,8 @@ function Window:CreateTab(config)
 	view.Visible = false
 	view.Parent = self.ContentFrame
 	
-	Utils.CreatePadding(view, 20)
+	local isMobile = Utils.IsMobile() and not Utils.IsTablet()
+	Utils.CreatePadding(view, isMobile and {Top = 15, Bottom = 15, Left = 15, Right = 15} or {Top = 20, Bottom = 20, Left = 20, Right = 20})
 	
 	local viewLayout = Instance.new("UIListLayout")
 	viewLayout.Padding = UDim.new(0, 20)
@@ -1021,12 +1044,14 @@ function Window:SetActiveTab(tab)
 		Utils.Tween(t.NavItem, {BackgroundTransparency = 1}, Theme.Animations.Fast)
 		Utils.Tween(t.NavItem:FindFirstChild("Frame"), {Size = UDim2.new(0, 3, 0, 0)}, Theme.Animations.Fast)
 		
-		for _, child in ipairs(t.NavItem:GetDescendants()) do
-			if child:IsA("TextLabel") then
-				Utils.Tween(child, {TextColor3 = Theme.Colors.TextMain}, Theme.Animations.Fast)
-			elseif child:IsA("ImageLabel") then
-				Utils.Tween(child, {ImageColor3 = Theme.Colors.TextMain}, Theme.Animations.Fast)
-			end
+		-- Update icon color
+		if t.IconImage then
+			Utils.Tween(t.IconImage, {ImageColor3 = Theme.Colors.TextMain}, Theme.Animations.Fast)
+		end
+		
+		-- Update label color if it exists (desktop only)
+		if t.LabelText then
+			Utils.Tween(t.LabelText, {TextColor3 = Theme.Colors.TextMain}, Theme.Animations.Fast)
 		end
 	end
 	
@@ -1040,12 +1065,14 @@ function Window:SetActiveTab(tab)
 	
 	Utils.Tween(tab.NavItem:FindFirstChild("Frame"), {Size = UDim2.new(0, 3, 1, 0)}, Theme.Animations.Fast)
 	
-	for _, child in ipairs(tab.NavItem:GetDescendants()) do
-		if child:IsA("TextLabel") then
-			Utils.Tween(child, {TextColor3 = Theme.Colors.Primary}, Theme.Animations.Fast)
-		elseif child:IsA("ImageLabel") then
-			Utils.Tween(child, {ImageColor3 = Theme.Colors.Primary}, Theme.Animations.Fast)
-		end
+	-- Update icon color
+	if tab.IconImage then
+		Utils.Tween(tab.IconImage, {ImageColor3 = Theme.Colors.Primary}, Theme.Animations.Fast)
+	end
+	
+	-- Update label color if it exists (desktop only)
+	if tab.LabelText then
+		Utils.Tween(tab.LabelText, {TextColor3 = Theme.Colors.Primary}, Theme.Animations.Fast)
 	end
 end
 
@@ -1175,10 +1202,11 @@ function AscentUI:CreateWindow(config)
 	
 	-- Sidebar
 	local sidebar = Instance.new("Frame")
-	sidebar.Size = isMobile and UDim2.new(0, 70, 1, 0) or UDim2.new(0, 260, 1, 0)
+	sidebar.Size = isMobile and UDim2.new(0, 80, 1, 0) or UDim2.new(0, 260, 1, 0)
 	sidebar.BackgroundColor3 = Theme.Colors.GlassSidebar
 	sidebar.BackgroundTransparency = Theme.Transparency.GlassSidebar
 	sidebar.BorderSizePixel = 0
+	sidebar.ClipsDescendants = true
 	sidebar.Parent = mainFrame
 	
 	local sidebarBorder = Instance.new("Frame")
@@ -1191,7 +1219,7 @@ function AscentUI:CreateWindow(config)
 	
 	-- Brand section
 	local brand = Instance.new("Frame")
-	brand.Size = UDim2.new(1, 0, 0, isMobile and 60 or 80)
+	brand.Size = UDim2.new(1, 0, 0, isMobile and 70 or 80)
 	brand.BackgroundTransparency = 1
 	brand.Parent = sidebar
 	
@@ -1232,15 +1260,20 @@ function AscentUI:CreateWindow(config)
 		brandSubtitle.TextXAlignment = Enum.TextXAlignment.Left
 		brandSubtitle.Parent = brand
 	else
-		-- Mobile: Just show icon
-		local icon = Components.CreateIcon(brand, "Target", 30, Theme.Colors.Primary)
-		icon.Position = UDim2.new(0.5, -15, 0.5, -15)
+		-- Mobile: Just show centered icon
+		local iconContainer = Instance.new("Frame")
+		iconContainer.Size = UDim2.new(1, 0, 1, 0)
+		iconContainer.BackgroundTransparency = 1
+		iconContainer.Parent = brand
+		
+		local icon = Components.CreateIcon(iconContainer, "Target", 32, Theme.Colors.Primary)
+		icon.Position = UDim2.new(0.5, -16, 0.5, -16)
 	end
 	
 	-- Navigation group
 	local navGroup = Instance.new("ScrollingFrame")
-	navGroup.Size = UDim2.new(1, 0, 1, isMobile and -120 or -160)
-	navGroup.Position = UDim2.new(0, 0, 0, isMobile and 60 or 80)
+	navGroup.Size = UDim2.new(1, 0, 1, isMobile and -140 or -160)
+	navGroup.Position = UDim2.new(0, 0, 0, isMobile and 70 or 80)
 	navGroup.BackgroundTransparency = 1
 	navGroup.BorderSizePixel = 0
 	navGroup.ScrollBarThickness = 4
@@ -1248,7 +1281,7 @@ function AscentUI:CreateWindow(config)
 	navGroup.ScrollBarImageTransparency = 0.8
 	navGroup.Parent = sidebar
 	
-	Utils.CreatePadding(navGroup, {Top = 15, Bottom = 15, Left = 10, Right = 10})
+	Utils.CreatePadding(navGroup, {Top = 10, Bottom = 10, Left = isMobile and 5 or 10, Right = isMobile and 5 or 10})
 	
 	local navLayout = Instance.new("UIListLayout")
 	navLayout.Padding = UDim.new(0, 3)
@@ -1261,8 +1294,8 @@ function AscentUI:CreateWindow(config)
 	
 	-- Status bar
 	local statusBar = Instance.new("Frame")
-	statusBar.Size = UDim2.new(1, 0, 0, isMobile and 60 or 80)
-	statusBar.Position = UDim2.new(0, 0, 1, isMobile and -60 or -80)
+	statusBar.Size = UDim2.new(1, 0, 0, isMobile and 70 or 80)
+	statusBar.Position = UDim2.new(0, 0, 1, isMobile and -70 or -80)
 	statusBar.BackgroundColor3 = Color3.new(0, 0, 0)
 	statusBar.BackgroundTransparency = 0.7
 	statusBar.BorderSizePixel = 0
@@ -1321,9 +1354,10 @@ function AscentUI:CreateWindow(config)
 	
 	-- Main content area
 	local main = Instance.new("Frame")
-	main.Size = isMobile and UDim2.new(1, -70, 1, 0) or UDim2.new(1, -260, 1, 0)
-	main.Position = isMobile and UDim2.new(0, 70, 0, 0) or UDim2.new(0, 260, 0, 0)
+	main.Size = isMobile and UDim2.new(1, -80, 1, 0) or UDim2.new(1, -260, 1, 0)
+	main.Position = isMobile and UDim2.new(0, 80, 0, 0) or UDim2.new(0, 260, 0, 0)
 	main.BackgroundTransparency = 1
+	main.ClipsDescendants = true
 	main.Parent = mainFrame
 	
 	-- Content frame (where views will be added)
@@ -1376,11 +1410,11 @@ function AscentUI:CreateWindow(config)
 		local newIsMobile = Utils.IsMobile()
 		local newIsTablet = Utils.IsTablet()
 		
-		if newIsMobile and not isTablet then
+		if newIsMobile and not newIsTablet then
 			mainFrame.Size = UDim2.new(0.95, 0, 0.85, 0)
-			sidebar.Size = UDim2.new(0, 70, 1, 0)
-			main.Size = UDim2.new(1, -70, 1, 0)
-			main.Position = UDim2.new(0, 70, 0, 0)
+			sidebar.Size = UDim2.new(0, 80, 1, 0)
+			main.Size = UDim2.new(1, -80, 1, 0)
+			main.Position = UDim2.new(0, 80, 0, 0)
 		elseif newIsTablet then
 			mainFrame.Size = UDim2.new(0.9, 0, 0.8, 0)
 			sidebar.Size = UDim2.new(0, 260, 1, 0)
