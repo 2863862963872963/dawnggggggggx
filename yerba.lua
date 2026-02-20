@@ -22,7 +22,7 @@ local Yerba = {
 		SectionGap = 10,
 		ContentPadding = 12,
 	},
-	DPI = 1,         -- global DPI scale (1 = 100%, 0.8 = 80%, 1.25 = 125%, etc.)
+	DPI = 1,         
 	PerformanceMode = false,
 	WindowsNil = {},
 	NilFolder = Instance.new('Folder'),
@@ -51,7 +51,6 @@ Yerba.__index = Yerba
         Returns the current scale of this specific window.
 --]]
 
---- Convert a raw dpi number (≥4) to a scale factor, then clamp.
 local function NormalizeDPI(value)
 	if value >= 4 then
 		value = value / 96  -- treat as raw DPI (96 = 1×)
@@ -59,12 +58,10 @@ local function NormalizeDPI(value)
 	return math.clamp(value, 0.5, 3.0)
 end
 
---- Apply scale to a UIScale instance with a smooth tween.
 local function ApplyScale(uiScale, scale)
 	Tween(uiScale, {Scale = scale}, 0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 end
 
---- Global DPI setter – affects all currently open windows.
 function Yerba:SetDPI(value)
 	local scale = NormalizeDPI(value)
 	Yerba.DPI = scale
@@ -75,7 +72,6 @@ function Yerba:SetDPI(value)
 	end
 end
 
---- Global DPI getter.
 function Yerba:GetDPI()
 	return Yerba.DPI
 end
