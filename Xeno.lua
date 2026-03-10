@@ -1,15 +1,38 @@
 --[[
     ╔══════════════════════════════════════════════════════════════════╗
-    ║           XOVA UI LIBRARY  ·  Enhanced Edition                  ║
+    ║           XOVA UI LIBRARY  ·  v3  Enhanced Edition              ║
     ║                                                                  ║
-    ║  New in this version:                                            ║
-    ║  • Library.Theme  + Library:SetTheme()                          ║
-    ║  • Library:SetTransparency()  + Args.Transparency in Window     ║
-    ║  • Page:Section(Name, Side, Icon)  – icon + side alignment      ║
-    ║  • Icon param on every element  (nil = hidden, no space wasted) ║
-    ║  • RichText = true on every TextLabel / TextBox                  ║
-    ║  • Rich element APIs: :Set() :SetTitle() :SetDesc()             ║
-    ║                        :SetVisible() :SetEnabled() :SetIcon()   ║
+    ║  Theme & Visuals                                                 ║
+    ║  • Library.Theme  +  Library:SetTheme(tbl)                      ║
+    ║  • Library:SetTransparency(n)                                    ║
+    ║                                                                  ║
+    ║  Config / Save Manager                                           ║
+    ║  • Window arg  ConfigPath = "folder"  (enables config I/O)      ║
+    ║  • Window arg  AutoSave   = true      (save on every change)     ║
+    ║  • Window arg  AutoLoad   = true      (load "default" on start)  ║
+    ║  • Library:SaveConfig(name?)                                     ║
+    ║  • Library:LoadConfig(name?)                                     ║
+    ║  • Library:DeleteConfig(name?)                                   ║
+    ║  • Library:ListConfigs()  → { string, ... }                     ║
+    ║  • ConfigKey = "key"  on Toggle / Slider / Input / Dropdown      ║
+    ║                                                                  ║
+    ║  Utility                                                         ║
+    ║  • Library:Utility("Random",  "Color"|"Number"|"Int"|"Bool"     ║
+    ║                              |"String"|"Item"|"HSV", ...)       ║
+    ║  • Library:Utility("Format",  "Number"|"Time"|"Bytes", ...)     ║
+    ║  • Library:Utility("Color",   "Lerp"|"Darken"|"Lighten"         ║
+    ║                              |"ToHex"|"FromHex", ...)           ║
+    ║  • Library:Utility("Table",   "Keys"|"Values"|"Contains"        ║
+    ║                              |"Shuffle"|"Copy", ...)            ║
+    ║  • Library:Utility("String",  "Trim"|"Split"|"Capitalize", ...) ║
+    ║  • Library:Utility("Math",    "Clamp"|"Lerp"|"Round", ...)      ║
+    ║                                                                  ║
+    ║  Sections & Elements                                             ║
+    ║  • Page:Section(Name, Side, Icon)  –  column containers         ║
+    ║  • Page:AddSettingTab()  –  pre-built config+UI settings panel   ║
+    ║  • Icon param on every element  (nil = hidden)                   ║
+    ║  • RichText = true on every label                                ║
+    ║  • APIs: :Set() :SetTitle() :SetDesc() :SetVisible() :SetEnabled()║
     ╚══════════════════════════════════════════════════════════════════╝
 --]]
 
@@ -21,6 +44,7 @@ local RunService       = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local TweenService     = game:GetService("TweenService")
 local CoreGui          = game:GetService("CoreGui")
+local HttpService      = game:GetService("HttpService")
 
 local Mobile      = if UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled then true else false
 local LocalPlayer = Players.LocalPlayer
@@ -45,6 +69,322 @@ function Library:SetTheme(newTheme)
     for k, v in pairs(newTheme) do
         Library.Theme[k] = v
     end
+end
+
+-- ════════════════════════════════════════════════════════════════════
+--  CONFIG / SAVE MANAGER  (internal state)
+-- ════════════════════════════════════════════════════════════════════
+Library._Registry   = {}    -- { [key] = { get = fn, set = fn } }
+Library._ConfigPath = nil   -- folder path set via Window({ ConfigPath = "..." })
+Library._AutoSave   = false -- set via Window({ AutoSave = true })
+Library._LoadTick   = os.clock()
+
+--- Register an element value with the config system.
+--- Called internally by Toggle / Slider / Input / Dropdown when ConfigKey is provided.
+function Library:_RegisterElement(key, getValue, setValue)
+    if not key or key == "" then return end
+    Library._Registry[key] = { get = getValue, set = setValue }
+end
+
+--- Serialize and write all registered values to <ConfigPath>/<name>.json
+function Library:SaveConfig(name)
+    name = tostring(name or "default")
+    local path = Library._ConfigPath
+    if not path then
+        warn("[Xova] ConfigPath not set – call Library:Window({ ConfigPath = '...' })")
+        return false
+    end
+    pcall(function() if not isfolder(path) then makefolder(path) end end)
+    local data = {}
+    for k, cb in pairs(Library._Registry) do
+        local ok, v = pcall(cb.get)
+        if ok then data[k] = v end
+    end
+    local ok, err = pcall(writefile, path .. "/" .. name .. ".json",
+        HttpService:JSONEncode(data))
+    if not ok then warn("[Xova] SaveConfig failed: " .. tostring(err)) end
+    return ok
+end
+
+--- Read <ConfigPath>/<name>.json and push values back into registered elements.
+function Library:LoadConfig(name)
+    name = tostring(name or "default")
+    local path = Library._ConfigPath
+    if not path then return false end
+    local file = path .. "/" .. name .. ".json"
+    local ok, exists = pcall(isfile, file)
+    if not ok or not exists then return false end
+    local ok2, raw = pcall(readfile, file)
+    if not ok2 then return false end
+    local ok3, data = pcall(function() return HttpService:JSONDecode(raw) end)
+    if not ok3 or type(data) ~= "table" then return false end
+    for k, cb in pairs(Library._Registry) do
+        if data[k] ~= nil then
+            pcall(cb.set, data[k])
+        end
+    end
+    return true
+end
+
+--- Delete <ConfigPath>/<name>.json
+function Library:DeleteConfig(name)
+    name = tostring(name or "default")
+    local path = Library._ConfigPath
+    if not path then return false end
+    local file = path .. "/" .. name .. ".json"
+    local ok, exists = pcall(isfile, file)
+    if not ok or not exists then return false end
+    pcall(delfile, file)
+    return true
+end
+
+--- Return a list of saved config names (without .json extension).
+function Library:ListConfigs()
+    local path = Library._ConfigPath
+    if not path then return {} end
+    local ok, files = pcall(listfiles, path)
+    if not ok then return {} end
+    local out = {}
+    for _, f in pairs(files) do
+        local n = tostring(f):match("([^/\\]+)%.json$")
+        if n then table.insert(out, n) end
+    end
+    table.sort(out)
+    return out
+end
+
+-- ════════════════════════════════════════════════════════════════════
+--  UTILITY
+--
+--  Library:Utility(category, type, ...)
+--
+--  "Random"  "Color"              → random Color3
+--            "HSV"                → random HSV Color3 (saturated)
+--            "Number", min, max   → random float
+--            "Int",    min, max   → random integer
+--            "Bool"               → random boolean
+--            "String", len, chars?→ random string
+--            "Item",   table      → random element of table
+--
+--  "Format"  "Number", n, dec?   → "1,234.56"
+--            "Time",   seconds   → "1h 23m 45s"
+--            "Bytes",  bytes     → "1.23 MB"
+--
+--  "Color"   "Lerp",    c1,c2,t  → lerped Color3
+--            "Darken",  c, f     → darkened Color3
+--            "Lighten", c, f     → lightened Color3
+--            "ToHex",   c        → "#RRGGBB"
+--            "FromHex", hex      → Color3
+--            "Invert",  c        → inverted Color3
+--
+--  "Table"   "Keys",     t       → { key, ... }
+--            "Values",   t       → { val, ... }
+--            "Contains", t, v    → boolean
+--            "Shuffle",  t       → shuffled copy
+--            "Copy",     t       → shallow copy
+--
+--  "String"  "Trim",       s     → trimmed
+--            "Split",      s,sep → { part, ... }
+--            "Capitalize", s     → "Hello World"
+--            "Repeat",     s,n   → repeated n times
+--
+--  "Math"    "Clamp",  n,min,max → clamped
+--            "Lerp",   a,b,t     → lerped
+--            "Round",  n,dec?    → rounded
+--            "Sign",   n         → -1 / 0 / 1
+-- ════════════════════════════════════════════════════════════════════
+local _UTIL_DEFAULT_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+
+function Library:Utility(category, utilType, ...)
+    local args = { ... }
+
+    -- ── Random ────────────────────────────────────────────────────────
+    if category == "Random" then
+        if utilType == "Color" then
+            return Color3.fromRGB(math.random(0,255), math.random(0,255), math.random(0,255))
+
+        elseif utilType == "HSV" then
+            return Color3.fromHSV(math.random(), 0.75 + math.random() * 0.25, 0.85 + math.random() * 0.15)
+
+        elseif utilType == "Number" then
+            local mn, mx = args[1] or 0, args[2] or 1
+            return mn + math.random() * (mx - mn)
+
+        elseif utilType == "Int" then
+            local mn, mx = math.floor(args[1] or 0), math.floor(args[2] or 100)
+            return math.random(mn, mx)
+
+        elseif utilType == "Bool" then
+            return math.random() >= 0.5
+
+        elseif utilType == "String" then
+            local len   = math.floor(args[1] or 8)
+            local chars = args[2] or _UTIL_DEFAULT_CHARS
+            local out   = {}
+            for _ = 1, len do
+                local i = math.random(1, #chars)
+                out[#out + 1] = chars:sub(i, i)
+            end
+            return table.concat(out)
+
+        elseif utilType == "Item" then
+            local t = args[1]
+            if type(t) ~= "table" or #t == 0 then return nil end
+            return t[math.random(1, #t)]
+        end
+
+    -- ── Format ────────────────────────────────────────────────────────
+    elseif category == "Format" then
+        if utilType == "Number" then
+            local n   = tonumber(args[1]) or 0
+            local dec = args[2] or 2
+            local fmt = string.format("%." .. dec .. "f", n)
+            -- insert thousands separators
+            local int, frac = fmt:match("^(-?%d+)(%.?.*)$")
+            int = int:reverse():gsub("(%d%d%d)", "%1,"):reverse():gsub("^,", "")
+            return int .. frac
+
+        elseif utilType == "Time" then
+            local s   = math.floor(math.abs(tonumber(args[1]) or 0))
+            local h   = math.floor(s / 3600)
+            local m   = math.floor((s % 3600) / 60)
+            local sec = s % 60
+            if h > 0 then
+                return string.format("%dh %dm %ds", h, m, sec)
+            elseif m > 0 then
+                return string.format("%dm %ds", m, sec)
+            else
+                return string.format("%ds", sec)
+            end
+
+        elseif utilType == "Bytes" then
+            local b = tonumber(args[1]) or 0
+            if b >= 1073741824 then return string.format("%.2f GB", b / 1073741824)
+            elseif b >= 1048576 then return string.format("%.2f MB", b / 1048576)
+            elseif b >= 1024    then return string.format("%.2f KB", b / 1024)
+            else                     return string.format("%d B",    b) end
+        end
+
+    -- ── Color ─────────────────────────────────────────────────────────
+    elseif category == "Color" then
+        if utilType == "Lerp" then
+            local c1, c2, t = args[1], args[2], args[3] or 0.5
+            return c1:Lerp(c2, math.clamp(t, 0, 1))
+
+        elseif utilType == "Darken" then
+            local c, f = args[1], args[2] or 0.3
+            return Color3.new(
+                math.clamp(c.R * (1 - f), 0, 1),
+                math.clamp(c.G * (1 - f), 0, 1),
+                math.clamp(c.B * (1 - f), 0, 1)
+            )
+
+        elseif utilType == "Lighten" then
+            local c, f = args[1], args[2] or 0.3
+            return Color3.new(
+                math.clamp(c.R + (1 - c.R) * f, 0, 1),
+                math.clamp(c.G + (1 - c.G) * f, 0, 1),
+                math.clamp(c.B + (1 - c.B) * f, 0, 1)
+            )
+
+        elseif utilType == "ToHex" then
+            local c = args[1]
+            return string.format("#%02X%02X%02X",
+                math.round(c.R * 255),
+                math.round(c.G * 255),
+                math.round(c.B * 255)
+            )
+
+        elseif utilType == "FromHex" then
+            local hex = tostring(args[1]):gsub("^#", "")
+            local r = tonumber(hex:sub(1,2), 16) or 0
+            local g = tonumber(hex:sub(3,4), 16) or 0
+            local b = tonumber(hex:sub(5,6), 16) or 0
+            return Color3.fromRGB(r, g, b)
+
+        elseif utilType == "Invert" then
+            local c = args[1]
+            return Color3.new(1 - c.R, 1 - c.G, 1 - c.B)
+        end
+
+    -- ── Table ─────────────────────────────────────────────────────────
+    elseif category == "Table" then
+        if utilType == "Keys" then
+            local out = {}
+            for k in pairs(args[1] or {}) do out[#out+1] = k end
+            return out
+
+        elseif utilType == "Values" then
+            local out = {}
+            for _, v in pairs(args[1] or {}) do out[#out+1] = v end
+            return out
+
+        elseif utilType == "Contains" then
+            local t, val = args[1] or {}, args[2]
+            for _, v in pairs(t) do if v == val then return true end end
+            return false
+
+        elseif utilType == "Shuffle" then
+            local t   = args[1] or {}
+            local out = {}
+            for i, v in ipairs(t) do out[i] = v end
+            for i = #out, 2, -1 do
+                local j = math.random(1, i)
+                out[i], out[j] = out[j], out[i]
+            end
+            return out
+
+        elseif utilType == "Copy" then
+            local out = {}
+            for k, v in pairs(args[1] or {}) do out[k] = v end
+            return out
+        end
+
+    -- ── String ────────────────────────────────────────────────────────
+    elseif category == "String" then
+        if utilType == "Trim" then
+            return (tostring(args[1] or "")):match("^%s*(.-)%s*$")
+
+        elseif utilType == "Split" then
+            local s, sep = tostring(args[1] or ""), tostring(args[2] or ",")
+            local out    = {}
+            for part in s:gmatch("([^" .. sep .. "]+)") do out[#out+1] = part end
+            return out
+
+        elseif utilType == "Capitalize" then
+            return (tostring(args[1] or "")):gsub("(%a)([%w_']*)", function(a, b)
+                return a:upper() .. b:lower()
+            end)
+
+        elseif utilType == "Repeat" then
+            local s, n = tostring(args[1] or ""), math.floor(args[2] or 1)
+            local out  = {}
+            for _ = 1, n do out[#out+1] = s end
+            return table.concat(out)
+        end
+
+    -- ── Math ──────────────────────────────────────────────────────────
+    elseif category == "Math" then
+        if utilType == "Clamp" then
+            return math.clamp(args[1] or 0, args[2] or 0, args[3] or 1)
+
+        elseif utilType == "Lerp" then
+            local a, b, t = args[1] or 0, args[2] or 1, args[3] or 0.5
+            return a + (b - a) * math.clamp(t, 0, 1)
+
+        elseif utilType == "Round" then
+            local n, dec = args[1] or 0, args[2] or 0
+            local f = 10 ^ dec
+            return math.floor(n * f + 0.5) / f
+
+        elseif utilType == "Sign" then
+            local n = args[1] or 0
+            return n > 0 and 1 or n < 0 and -1 or 0
+        end
+    end
+
+    warn("[Xova] Library:Utility – unknown category/type: " .. tostring(category) .. " / " .. tostring(utilType))
+    return nil
 end
 
 -- ════════════════════════════════════════════════════════════════════
@@ -319,10 +659,17 @@ end
 --  WINDOW
 -- ════════════════════════════════════════════════════════════════════
 function Library:Window(Args)
-    local Title    = Args.Title    or "Xova's Project"
-    local SubTitle = Args.SubTitle or "Made by s1nve"
-    local T        = Library.Theme
-    local BgAlpha  = Args.Transparency or T.Transparency or 0
+    local Title      = Args.Title        or "Xova's Project"
+    local SubTitle   = Args.SubTitle     or "Made by s1nve"
+    local T          = Library.Theme
+    local BgAlpha    = Args.Transparency or T.Transparency or 0
+
+    -- ── Config wiring ────────────────────────────────────────────────
+    if Args.ConfigPath then
+        Library._ConfigPath = tostring(Args.ConfigPath)
+        Library._AutoSave   = Args.AutoSave == true
+    end
+    local _doAutoLoad = (Args.AutoLoad ~= false) and (Library._ConfigPath ~= nil)
 
     local Xova = Library:Create("ScreenGui", {
         Name           = "Xova",
@@ -1087,11 +1434,12 @@ function Library:Window(Args)
         -- ── Toggle ───────────────────────────────────────────────────
         --  Args: Title, Desc, Icon, Value, Callback
         function Page:Toggle(Args)
-            local Title    = Args.Title
-            local Desc     = Args.Desc
-            local Icon     = Args.Icon
-            local Value    = Args.Value    or false
-            local Callback = Args.Callback or function() end
+            local Title     = Args.Title
+            local Desc      = Args.Desc
+            local Icon      = Args.Icon
+            local Value     = Args.Value     or false
+            local Callback  = Args.Callback  or function() end
+            local ConfigKey = Args.ConfigKey
 
             local Rows     = Library:NewRows(activeContainer, Title, Desc, Icon)
             local L        = Rows.Vectorize.Left.Text
@@ -1152,6 +1500,7 @@ function Library:Window(Args)
                     Library:Tween({ v = CheckImg,  t = 0.5, s = "Exponential", d = "Out", g = { ImageTransparency = 1 } }):Play()
                     StrokeUI.Thickness = 0.5
                 end
+                if Library._AutoSave then pcall(Library.SaveConfig, Library) end
             end
 
             Click.MouseButton1Click:Connect(function()
@@ -1179,19 +1528,24 @@ function Library:Window(Args)
                 Click.Active                     = v
                 BG.BackgroundTransparency        = v and 0 or 0.5
             end
+            Library:_RegisterElement(ConfigKey,
+                function() return Data.Value end,
+                function(v) API:Set(v == true or v == "true") end
+            )
             return API
         end
 
         -- ── Slider ───────────────────────────────────────────────────
         --  Args: Title, Icon, Min, Max, Rounding, Value, Callback
         function Page:Slider(Args)
-            local Title    = Args.Title
-            local Icon     = Args.Icon
-            local Min      = Args.Min
-            local Max      = Args.Max
-            local Rounding = Args.Rounding or 0
-            local Value    = Args.Value    or Min
-            local Callback = Args.Callback or function() end
+            local Title     = Args.Title
+            local Icon      = Args.Icon
+            local Min       = Args.Min
+            local Max       = Args.Max
+            local Rounding  = Args.Rounding or 0
+            local Value     = Args.Value    or Min
+            local Callback  = Args.Callback or function() end
+            local ConfigKey = Args.ConfigKey
 
             local SliderFrame = Library:Create("Frame", {
                 Name             = "Slider",
@@ -1358,6 +1712,7 @@ function Library:Window(Args)
                 Library:Tween({ v = Fill, t = 0.1, s = "Linear", d = "Out", g = { Size = UDim2.new(ratio, 0, 1, 0) } }):Play()
                 BoxVal.Text = tostring(val)
                 Callback(val)
+                if Library._AutoSave then pcall(Library.SaveConfig, Library) end
                 return val
             end
 
@@ -1434,14 +1789,19 @@ function Library:Window(Args)
             function API:SetTitle(t)   STitle.Text          = tostring(t) end
             function API:SetVisible(v) SliderFrame.Visible  = v end
             function API:SetEnabled(v) ClickBtn.Active      = v end
+            Library:_RegisterElement(ConfigKey,
+                function() return tonumber(BoxVal.Text) or Value end,
+                function(v) API:Set(tonumber(v) or Value) end
+            )
             return API
         end
 
         -- ── Input ────────────────────────────────────────────────────
         --  Args: Value, Callback
         function Page:Input(Args)
-            local Value    = Args.Value    or ""
-            local Callback = Args.Callback or function() end
+            local Value     = Args.Value     or ""
+            local Callback  = Args.Callback  or function() end
+            local ConfigKey = Args.ConfigKey
 
             local InputFrame = Library:Create("Frame", {
                 Name                   = "Input",
@@ -1534,18 +1894,23 @@ function Library:Window(Args)
                 CopyClick.Active    = v
                 TB.TextEditable     = v
             end
+            Library:_RegisterElement(ConfigKey,
+                function() return TB.Text end,
+                function(v) API:Set(tostring(v or "")) end
+            )
             return API
         end
 
         -- ── Dropdown ─────────────────────────────────────────────────
         --  Args: Title, Icon, List, Value, Callback
         function Page:Dropdown(Args)
-            local Title    = Args.Title
-            local Icon     = Args.Icon
-            local List     = Args.List
-            local Value    = Args.Value
-            local Callback = Args.Callback
-            local IsMulti  = typeof(Value) == "table"
+            local Title     = Args.Title
+            local Icon      = Args.Icon
+            local List      = Args.List
+            local Value     = Args.Value
+            local Callback  = Args.Callback
+            local ConfigKey = Args.ConfigKey
+            local IsMulti   = typeof(Value) == "table"
 
             local Rows  = Library:NewRows(activeContainer, Title, "N/A", Icon)
             local Right = Rows.Vectorize.Right
@@ -1917,7 +2282,168 @@ function Library:Window(Args)
             function API:SetVisible(v) Rows.Visible = v end
             function API:AddList(name) Setting:AddList(name) end
             function API:Clear(a)      Setting:Clear(a) end
+            Library:_RegisterElement(ConfigKey,
+                function() return Value end,
+                function(v) API:Set(v) end
+            )
             return API
+        end
+
+        -- ── AddSettingTab ─────────────────────────────────────────────
+        --  Appends a pre-built "⚙ Settings" panel to this page.
+        --  Contains:  UI controls (opacity, accent, scale)
+        --             Config manager (save / load / delete / list)
+        --
+        --  Usage:
+        --    local page = Window:NewPage({ Title = "Settings", ... })
+        --    page:AddSettingTab()
+        function Page:AddSettingTab()
+            local T = Library.Theme
+
+            -- ── Left: UI Controls ─────────────────────────────────────
+            local uiCol  = Page:Section("Interface",      "Left",  nil)
+            local cfgCol = Page:Section("Config Manager", "Right", nil)
+
+            -- Opacity
+            uiCol:Slider({
+                Title    = "Window Opacity",
+                Desc     = "Background transparency",
+                Min      = 0, Max = 0.95, Rounding = 2, Value = 0,
+                ConfigKey = "__xova_opacity",
+                Callback  = function(v) Library:SetTransparency(v) end,
+            })
+
+            -- Accent colour
+            local accentList = { "Default Pink", "Green", "Blue", "Orange", "Purple", "White", "Red" }
+            local accentMap  = {
+                ["Default Pink"] = Color3.fromRGB(255, 0,   127),
+                Green            = Color3.fromRGB(48,  255, 106),
+                Blue             = Color3.fromRGB(0,   120, 255),
+                Orange           = Color3.fromRGB(255, 130, 0  ),
+                Purple           = Color3.fromRGB(140, 0,   255),
+                White            = Color3.fromRGB(220, 220, 220),
+                Red              = Color3.fromRGB(255, 40,  40 ),
+            }
+            uiCol:Dropdown({
+                Title     = "Accent Colour",
+                List      = accentList,
+                Value     = "Default Pink",
+                ConfigKey = "__xova_accent",
+                Callback  = function(v)
+                    if accentMap[v] then Library:SetTheme({ Accent = accentMap[v] }) end
+                end,
+            })
+
+            -- Random accent button
+            uiCol:Button({
+                Title    = "Random Accent",
+                Desc     = "Roll a random accent colour",
+                Text     = "🎲 Random",
+                Callback = function()
+                    Library:SetTheme({ Accent = Library:Utility("Random", "HSV") })
+                end,
+            })
+
+            -- ── Right: Config Manager ─────────────────────────────────
+            cfgCol:Paragraph({
+                Title = "Config Manager",
+                Desc  = Library._ConfigPath
+                    and ("Folder: " .. Library._ConfigPath)
+                    or  "No ConfigPath set in Window({})",
+            })
+
+            local configNameInput = cfgCol:Input({
+                Value     = "default",
+                ConfigKey = nil,  -- never save the config-name field itself
+                Callback  = function() end,
+            })
+
+            cfgCol:Button({
+                Title    = "Save Config",
+                Desc     = "Write current values to file",
+                Text     = "💾 Save",
+                Callback = function()
+                    local name = configNameInput.Value ~= "" and configNameInput.Value or "default"
+                    local ok   = Library:SaveConfig(name)
+                    print("[Xova] SaveConfig(" .. name .. ") → " .. tostring(ok))
+                end,
+            })
+
+            cfgCol:Button({
+                Title    = "Load Config",
+                Desc     = "Read values from file",
+                Text     = "📂 Load",
+                Callback = function()
+                    local name = configNameInput.Value ~= "" and configNameInput.Value or "default"
+                    local ok   = Library:LoadConfig(name)
+                    print("[Xova] LoadConfig(" .. name .. ") → " .. tostring(ok))
+                end,
+            })
+
+            cfgCol:Button({
+                Title    = "Delete Config",
+                Desc     = "Remove the config file",
+                Text     = "🗑 Delete",
+                Callback = function()
+                    local name = configNameInput.Value ~= "" and configNameInput.Value or "default"
+                    local ok   = Library:DeleteConfig(name)
+                    print("[Xova] DeleteConfig(" .. name .. ") → " .. tostring(ok))
+                end,
+            })
+
+            -- Saved configs list (refreshes on open – we do it with RightLabel)
+            local savedLabel = cfgCol:RightLabel({
+                Title = "Saved Configs",
+                Desc  = "Files in config folder",
+                Right = "—",
+            })
+
+            cfgCol:Button({
+                Title    = "Refresh List",
+                Desc     = "Update saved configs display",
+                Text     = "↻ Refresh",
+                Callback = function()
+                    local list = Library:ListConfigs()
+                    savedLabel:Set(#list > 0 and table.concat(list, ", ") or "none")
+                end,
+            })
+
+            -- ── Full-width: Script Info ───────────────────────────────
+            local infoSec = Page:Section("Script Info", nil, nil)
+
+            infoSec:RightLabel({
+                Title = "Library",
+                Desc  = "UI framework",
+                Right = "Xova v3 Enhanced",
+            })
+
+            infoSec:RightLabel({
+                Title = "Load Time",
+                Desc  = "Script init time",
+                Right = string.format("%.3f s", os.clock() - Library._LoadTick),
+            })
+
+            infoSec:RightLabel({
+                Title = "Registered Keys",
+                Desc  = "Elements tracked by config",
+                Right = (function()
+                    local n = 0
+                    for _ in pairs(Library._Registry) do n = n + 1 end
+                    return tostring(n)
+                end)(),
+            })
+
+            infoSec:RightLabel({
+                Title = "AutoSave",
+                Desc  = "Save on every value change",
+                Right = Library._AutoSave and "On" or "Off",
+            })
+
+            infoSec:RightLabel({
+                Title = "ConfigPath",
+                Desc  = "Save folder",
+                Right = Library._ConfigPath or "Not set",
+            })
         end
 
         -- ── Banner ───────────────────────────────────────────────────
@@ -2020,6 +2546,13 @@ function Library:Window(Args)
             function Library:SetTimeValue(val)
                 THETIME.Text = val
             end
+        end
+
+        -- Auto-load default config after all elements have registered
+        if _doAutoLoad then
+            task.delay(0.15, function()
+                Library:LoadConfig("default")
+            end)
         end
     end
 
